@@ -12,35 +12,26 @@ MEDALLION_COLUMNS = [
 
 st.set_page_config(page_title="Timber Medallion Portfolio", layout="wide")
 
-def load_sheet_medallions():
-    """Fetches real-time parameters from the explicit Google Apps Script JSON structure."""
+@st.cache_data(ttl=10)
+def fetch_all_sheet_data():
+    """Fetches everything in a single optimized payload to keep UI responsive and sync intact."""
     try:
         response = requests.post(API_URL, json={"action": "fetchData"}, timeout=15)
         if response.status_code == 200:
             data = response.json()
             if data.get("status") == "success":
-                return {str(m["Medallion"]).strip().lower(): m for m in data.get("medallions", [])}
+                # Parse medallions list into key lookup map
+                medallions_map = {str(m["Medallion"]).strip().lower(): m for m in data.get("medallions", [])}
+                
+                # Pull summary data object
+                summary = data.get("master_summary", {})
+                val = summary.get("CollectionValue", "$0")
+                coll = summary.get("MedallionsCollected", "0 / 12")
+                
+                return medallions_map, val, coll
     except Exception as e:
-        pass
-    return {}
-
-def load_summary_metrics():
-    """
-    Fetches layout totals from the master_sheet tab.
-    Pulls Collection Value from Column C (Index 2) and Total Medallions from Column D (Index 3).
-    """
-    try:
-        response = requests.post(API_URL, json={"action": "fetchData"}, timeout=15)
-        if response.status_code == 200:
-            data = response.json()
-            # If your Apps Script updates output a master summary packet, extract it here
-            # Defaulting to dynamic fallback data calculated directly or parsed from sheet arrays
-            total_value = data.get("master_summary", {}).get("CollectionValue", "$12,450")
-            total_collected = data.get("master_summary", {}).get("MedallionsCollected", "11 / 12")
-            return total_value, total_collected
-    except Exception:
-        pass
-    return "$0.00", "0 / 12"
+        st.error(f"Sync Failure: {str(e)}")
+    return {}, "$0", "0 / 12"
 
 def get_image_base64(path):
     if os.path.exists(path):
@@ -48,15 +39,18 @@ def get_image_base64(path):
             return base64.b64encode(image_file.read()).decode()
     return None
 
-# Pull dynamic layout parameters
-live_data = load_sheet_medallions()
-summary_value, summary_collected = load_summary_metrics()
+# Pull synchronized data records in one clean shot
+live_data, summary_value, summary_collected = fetch_all_sheet_data()
 
 # Mock user stock balance matrix
 mock_user = {
     "Spruce": 6, "Pine": 2, "Meranti": 0, "Balsa": 0, "Oak": 0, "Maple": 0,
     "Walnut": 0, "Cherry": 0, "Mahogany": 2, "Ebony": 0, "Rosewood": 1, "Agarwood": 0
 }
+
+# Ensure summaries carry aesthetic fallback indicators if empty
+if not summary_value.strip().startswith("$") and summary_value != "Sync Err":
+    summary_value = f"${summary_value.strip()}"
 
 # ====================================================================
 # UNIFIED GRID LAYOUT WITH ADVANCED STYLING INTERFACES
@@ -65,11 +59,10 @@ html_elements = """
 <style>
     body {
         margin: 0; padding: 0; 
-        /* Subtle contemporary structural geometric pattern background */
         background-color: #0E1117;
-        background-image: linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-                          linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
-        background-size: 20px 20px;
+        background-image: linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+        background-size: 24px 24px;
         font-family: 'Inter', system-ui, -apple-system, sans-serif;
         overflow: hidden;
     }
@@ -179,7 +172,7 @@ for wood_name in MEDALLION_COLUMNS:
         if probability != "N/A" and not str(probability).endswith("%"):
             probability = f"{probability}%"
     else:
-        rarity, value, availability, probability = "Sync Err", "Sync Err", "Sync Err", "Sync Err"
+        rarity, value, availability, probability = "Loading...", "Loading...", "Loading...", "Loading..."
         
     img_b64 = get_image_base64(f"assets/{wood_name.lower()}.png")
     
@@ -201,7 +194,7 @@ for wood_name in MEDALLION_COLUMNS:
     </div>
     """
 
-# Appending the dynamic display cards directly below the showroom array row
+# Appending the metrics grid block section
 html_elements += f"""
 </div>
 
@@ -217,5 +210,4 @@ html_elements += f"""
 </div>
 """
 
-# Expanded frame container height context slightly to host the bottom status rows seamlessly
 st.components.v1.html(html_elements, height=380, scrolling=False)
