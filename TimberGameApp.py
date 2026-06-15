@@ -47,6 +47,9 @@ mock_user = {
 if not summary_value.strip().startswith("$") and "Loading" not in summary_value:
     summary_value = f"${summary_value.strip()}"
 
+# ====================================================================
+# UNIFIED GRID LAYOUT WITH COMPACT HEADROOM ADJUSTMENTS
+# ====================================================================
 html_elements = """
 <style>
     body {
@@ -65,12 +68,12 @@ html_elements = """
         font-weight: 600;
         color: #FFFFFF;
         letter-spacing: -0.5px;
-        margin-top: 20px;
-        margin-bottom: 0px;
+        margin-top: 25px;
+        margin-bottom: -15px; /* Pulls the grid up closer to the text alignment */
     }
     .casement-grid {
         display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px;
-        padding-top: 130px; 
+        padding-top: 40px; /* Reduced from 130px to bridge the awkward empty gap */
         padding-left: 15px; padding-right: 15px;
     }
     .grid-node {
@@ -91,6 +94,7 @@ html_elements = """
     .quantity-badge { font-size: 12px; font-weight: 700; color: #F4D068; margin-bottom: 3px; min-height: 15px; }
     .label-badge { font-size: 10px; font-weight: 700; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; }
     
+    /* Absolute Floating Tooltip Card Layout - Adjusted to handle lower ceiling spacing */
     .node-tooltip {
         visibility: hidden; opacity: 0; position: absolute;
         bottom: 110px; left: 50%; transform: translateX(-50%);
@@ -109,7 +113,7 @@ html_elements = """
 
     .dashboard-row {
         display: flex; justify-content: center; gap: 20px;
-        margin-top: 35px; padding: 0 15px;
+        margin-top: 25px; padding: 0 15px;
     }
     .stat-card {
         background: #161925; border: 1px solid #23273A; border-radius: 6px;
@@ -182,4 +186,5 @@ html_elements += f"""
 </div>
 """
 
-st.components.v1.html(html_elements, height=380, scrolling=False)
+# Tightened component height footprint since elements are now packed closer together
+st.components.v1.html(html_elements, height=290, scrolling=False)
