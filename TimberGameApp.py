@@ -117,20 +117,33 @@ st.markdown("""
         margin-bottom: 25px;
     }
     
+    /* Unified Flex Row layout container */
+    .medallion-flex-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        background: #0B0D14;
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid #1E2235;
+        margin-bottom: 25px;
+    }
+    
     .slot-container {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: flex-start;
-        width: 100%;
+        flex: 1;
         text-align: center;
         position: relative;
     }
     
     .medallion-frame-fixed {
-        width: 100%;
-        max-width: 70px; 
-        aspect-ratio: 1 / 1;
+        width: 65px; 
+        height: 65px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -141,13 +154,11 @@ st.markdown("""
         width: 100%;
         height: 100%;
         object-fit: contain;
-        pointer-events: none !important;
-        user-select: none !important;
     }
     
     .circle-placeholder-lock {
-        width: 65px; 
-        height: 65px;
+        width: 60px; 
+        height: 60px;
         border-radius: 50%;
         border: 2px dashed #212435;
         background: #11131C;
@@ -157,14 +168,13 @@ st.markdown("""
         color: #31364C;
         font-size: 1rem;
         box-sizing: border-box;
-        margin: 0 auto;
     }
     
     .tooltip-card {
         visibility: hidden;
         opacity: 0;
         position: absolute;
-        bottom: 115%; 
+        bottom: 120%; 
         left: 50%;
         transform: translateX(-50%) translateY(5px);
         width: 185px;
@@ -202,10 +212,7 @@ st.markdown("""
         color: #5C6479;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        margin-top: 4px;
-        width: 100%;
-        white-space: nowrap;
-        overflow: hidden;
+        margin-top: 6px;
     }
 
     .qty-indicator-tight {
@@ -213,8 +220,6 @@ st.markdown("""
         font-weight: bold; 
         color: #F4D068; 
         margin-top: 4px;
-        height: 14px;
-        line-height: 14px;
     }
     
     .panel-box {
@@ -418,59 +423,69 @@ with col_logout:
         st.rerun()
 
 # ------------------------------------------------------------
-# 🏅 12-COLUMN MEDALLION SHOWCASE (Safely Wrapped inside Markdown Blocks)
+# 🏅 FIXED HTML/CSS FLEXBOX ROW (Eliminated column text glitches)
 # ------------------------------------------------------------
 st.markdown("<p style='font-size: 0.85rem; font-weight: 600; color: #A0AEC0; margin-bottom: 14px; letter-spacing:0.5px;'>MEDALLION SHOWCASE CASEMENT</p>", unsafe_allow_html=True)
-badge_cols = st.columns(12)
 
-for idx, wood_name in enumerate(MEDALLION_COLUMNS):
+# Generate HTML strings for all 12 items dynamically
+flex_items_html = ""
+
+for wood_name in MEDALLION_COLUMNS:
     display_label = wood_name[:5].upper()
+    owned_count = int(user.get(wood_name, 0))
     
-    meta = live_metadata.get(wood_name, {"Rarity": "Common", "Probability": "10%", "Availability": "0", "Value": "$0"})
+    meta = live_metadata.get(wood_name, {"Rarity": "Common", "Probability": "10%", "Availability": "151", "Value": "$5"})
     rarity_val = meta.get("Rarity", "Common")
     prob_raw = str(meta.get("Probability", "10"))
     prob_val = prob_raw if "%" in prob_raw else f"{prob_raw}%"
-    avail_val = str(meta.get("Availability", "0"))
-    val_cost = str(meta.get("Value", "$0"))
+    
+    # DEDUCTION ENGINE: Live sheet stock minus total amount owned by this apprentice portfolio
+    base_sheet_stock = int(meta.get("Availability", "0"))
+    adjusted_availability = max(0, base_sheet_stock - owned_count)
 
-    with badge_cols[idx]:
-        owned_count = int(user.get(wood_name, 0))
-        img_filename = f"assets/{wood_name.lower()}.png"
-        img_base64 = get_image_base64(img_filename)
-        
-        tooltip_html = f"""
-        <div class='tooltip-card'>
-            <div class='tip-line'>💎 Name: <span>{wood_name}</span></div>
-            <div class='tip-line'>🏷️ Rarity: <span>{rarity_val}</span></div>
-            <div class='tip-line'>🎲 Prob: <span>{prob_val}</span></div>
-            <div class='tip-line'>📦 Avail: <span>{avail_val} left</span></div>
-            <div class='tip-line'>💰 Value: <span>{val_cost}</span></div>
+    val_cost = str(meta.get("Value", "$5"))
+    img_filename = f"assets/{wood_name.lower()}.png"
+    img_base64 = get_image_base64(img_filename)
+    
+    tooltip_html = f"""
+    <div class='tooltip-card'>
+        <div class='tip-line'>💎 Name: <span>{wood_name}</span></div>
+        <div class='tip-line'>🏷️ Rarity: <span>{rarity_val}</span></div>
+        <div class='tip-line'>🎲 Prob: <span>{prob_val}</span></div>
+        <div class='tip-line'>📦 Avail: <span>{adjusted_availability} left</span></div>
+        <div class='tip-line'>💰 Value: <span>{val_cost}</span></div>
+    </div>
+    """
+    
+    if owned_count > 0 and img_base64:
+        flex_items_html += f"""
+        <div class='slot-container'>
+            {tooltip_html}
+            <div class='medallion-frame-fixed'>
+                <img class='medallion-img-render' src='data:image/png;base64,{img_base64}' />
+            </div>
+            <div class='qty-indicator-tight'>x{owned_count}</div>
+            <div class='badge-label-title'>{display_label}</div>
         </div>
         """
-        
-        # FIX: Entire UI blocks are now parsed safely through Streamlit's Markdown engine
-        if owned_count > 0 and img_base64:
-            st.markdown(f"""
-            <div class='slot-container'>
-                {tooltip_html}
-                <div class='medallion-frame-fixed'>
-                    <img class='medallion-img-render' src='data:image/png;base64,{img_base64}' />
-                </div>
-                <div class='qty-indicator-tight'>x{owned_count}</div>
-                <div class='badge-label-title'>{display_label}</div>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-            <div class='slot-container'>
-                {tooltip_html}
+    else:
+        flex_items_html += f"""
+        <div class='slot-container'>
+            {tooltip_html}
+            <div class='medallion-frame-fixed'>
                 <div class='circle-placeholder-lock'>🔒</div>
-                <div class='qty-indicator-tight' style='visibility: hidden;'>x0</div>
-                <div class='badge-label-title'>{display_label}</div>
             </div>
-            """, unsafe_allow_html=True)
+            <div class='qty-indicator-tight' style='visibility: hidden;'>x0</div>
+            <div class='badge-label-title'>{display_label}</div>
+        </div>
+        """
 
-st.write("")
+# Render the entire row inside a single safe markdown injection block
+st.markdown(f"""
+<div class='medallion-flex-row'>
+    {flex_items_html}
+</div>
+""", unsafe_allow_html=True)
 
 # --- REAL-TIME HIGHER LEVEL METRIC BANNER ---
 col_met1, col_met2 = st.columns(2)
@@ -527,11 +542,11 @@ if st.session_state.get('reward_pending', False):
             final_award = random.choices(med_names, weights=med_weights, k=1)[0]
             target_sheet_row = next(m for m in valid_pool if m.get("Medallion") == final_award)
             
-            # Deduct from global availability column row record
+            # Update sheet row when item drops
             new_availability = max(0, int(target_sheet_row.get("Availability", 1)) - 1)
             target_sheet_row["Availability"] = new_availability
             
-            st.success(f"🏆 Premium Drop Acquired: Added 1x [{final_award} Medallion] onto your studio rack sheet! (Reserves left: {new_availability})")
+            st.success(f"🏆 Premium Drop Acquired: Added 1x [{final_award} Medallion] onto your studio rack sheet!")
             
             user[final_award] = int(user.get(final_award, 0)) + 1
             st.session_state.reward_pending = False
@@ -625,9 +640,9 @@ with panel_right:
     col_b1, col_b2 = st.columns(2)
     with col_b1:
         spruce_meta = live_metadata.get("Spruce", {"Availability": "0"})
-        spruce_avail = int(spruce_meta.get("Availability", 0))
+        spruce_avail = int(spruce_meta.get("Availability", 0)) - int(user.get("Spruce", 0))
         st.markdown("<div style='font-size:0.8rem; font-weight:600; color:#CBD5E0;'>Spruce Lumber</div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='font-size:0.75rem; color:#EF4444; margin-bottom:6px;'>Cost: $40 | {spruce_avail} left</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size:0.75rem; color:#EF4444; margin-bottom:6px;'>Cost: $40 | {max(0, spruce_avail)} left</div>", unsafe_allow_html=True)
         
         if st.button("Buy Spruce Stock", use_container_width=True, disabled=(int(user['Bank Balance']) < 40 or spruce_avail <= 0)):
             user['Bank Balance'] = int(user['Bank Balance']) - 40
@@ -645,9 +660,9 @@ with panel_right:
             
     with col_b2:
         pine_meta = live_metadata.get("Pine", {"Availability": "0"})
-        pine_avail = int(pine_meta.get("Availability", 0))
+        pine_avail = int(pine_meta.get("Availability", 0)) - int(user.get("Pine", 0))
         st.markdown("<div style='font-size:0.8rem; font-weight:600; color:#CBD5E0;'>Pine Lumber</div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='font-size:0.75rem; color:#EF4444; margin-bottom:6px;'>Cost: $50 | {pine_avail} left</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size:0.75rem; color:#EF4444; margin-bottom:6px;'>Cost: $50 | {max(0, pine_avail)} left</div>", unsafe_allow_html=True)
         
         if st.button("Buy Pine Stock", use_container_width=True, disabled=(int(user['Bank Balance']) < 50 or pine_avail <= 0)):
             user['Bank Balance'] = int(user['Bank Balance']) - 50
