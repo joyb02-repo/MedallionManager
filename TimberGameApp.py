@@ -39,6 +39,7 @@ def get_image_base64(path):
 
 live_data, summary_value, summary_collected = fetch_all_sheet_data()
 
+# Fixed the syntax error typo here (changed "Meranti", 0 to "Meranti": 0)
 mock_user = {
     "Spruce": 6, "Pine": 2, "Meranti": 0, "Balsa": 0, "Oak": 0, "Maple": 0,
     "Walnut": 0, "Cherry": 0, "Mahogany": 2, "Ebony": 0, "Rosewood": 1, "Agarwood": 0
@@ -54,7 +55,6 @@ html_elements = """
 <style>
     body {
         margin: 0; 
-        /* Generous top padding drops the initial content row lower to maximize tooltip headroom */
         padding: 50px 0 0 0; 
         background-color: #0E1117;
         background-image: linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
@@ -76,15 +76,16 @@ html_elements = """
     .portfolio-intro {
         text-align: center;
         max-width: 800px;
-        margin: 0 auto 50px auto; /* Generates a clean visual gap before the showcase row */
+        margin: 0 auto 50px auto; 
         font-family: 'Inter', system-ui, -apple-system, sans-serif;
         font-size: 13px;
         line-height: 1.6;
-        color: rgba(255, 255, 255, 0.65); /* Translucent sleek layout styling */
+        /* Adjusted opacity down to 0.45 to render it beautifully faint and non-distracting */
+        color: rgba(255, 255, 255, 0.45); 
         letter-spacing: 0.1px;
     }
     .portfolio-intro span {
-        color: #F4D068;
+        color: rgba(244, 208, 104, 0.7); /* Matching soft gold accent style */
         font-weight: 600;
     }
     .casement-grid {
@@ -100,7 +101,6 @@ html_elements = """
         align-items: center; justify-content: center; margin-bottom: 8px;
     }
     
-    /* Animation Framework for Hover Scales */
     .image-frame img, .lock-node { 
         width: 100%; height: 100%; object-fit: contain;
         transition: transform 0.15s ease-in-out;
@@ -112,7 +112,6 @@ html_elements = """
         color: #3D4563; font-size: 13px;
     }
     
-    /* Applies the 15% magnification on hover */
     .grid-node:hover .image-frame img,
     .grid-node:hover .lock-node {
         transform: scale(1.15);
@@ -121,7 +120,6 @@ html_elements = """
     .quantity-badge { font-size: 12px; font-weight: 700; color: #F4D068; margin-bottom: 3px; min-height: 15px; }
     .label-badge { font-size: 10px; font-weight: 700; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; }
     
-    /* Absolute Positioning Core Strategy */
     .node-tooltip {
         visibility: hidden; opacity: 0; position: absolute;
         top: -120px; bottom: auto; left: 50%; transform: translateX(-50%);
@@ -131,7 +129,6 @@ html_elements = """
     }
     .grid-node:hover .node-tooltip { visibility: visible; opacity: 1; }
     
-    /* Horizontal boundary shifts for the edge elements */
     .grid-node:first-child .node-tooltip { left: 0; transform: translateX(0); }
     .grid-node:last-child .node-tooltip { left: auto; right: 0; transform: translateX(0); }
     
@@ -219,5 +216,4 @@ html_elements += f"""
 </div>
 """
 
-# Upgraded total height constraint to 490 to accommodate the intro body text perfectly
 st.components.v1.html(html_elements, height=490, scrolling=False)
