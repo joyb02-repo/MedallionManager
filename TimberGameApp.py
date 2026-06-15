@@ -1,172 +1,163 @@
 import streamlit as st
 import random
-import time
 
-# --- INITIALIZE STATE ---
-if 'coins' not in st.session_state:
-    st.session_state.coins = 120
-if 'xp' not in st.session_state:
-    st.session_state.xp = 0
-if 'current_blueprint' not in st.session_state:
-    st.session_state.current_blueprint = None
-if 'game_logs' not in st.session_state:
-    st.session_state.game_logs = ["Welcome to the Woodshop. Pull a blueprint to start!"]
+# --- INITIALIZE APP STATE ---
+if 'balance' not in st.session_state:
+    st.session_state.balance = 250  # Starting cash
+if 'spending' not in st.session_state:
+    st.session_state.spending = 0
+if 'completed_count' not in st.session_state:
+    st.session_state.completed_count = 0
+if 'logs' not in st.session_state:
+    st.session_state.logs = [" Clocked in. Welcome to the workshop floor, Apprentice!"]
 
-st.set_page_config(page_title="Timber Tycoon: Overdrive", page_icon="🪚", layout="centered")
+# Initialize 10 empty slot spaces for showcase items
+if 'slots' not in st.session_state:
+    st.session_state.slots = {f"Slot {i+1}": "Empty" for i in range(10)}
 
-# --- UI STYLING ---
+# Dynamic pool of interactive jobs
+JOB_POOL = [
+    {"name": "🛹 Custom Skateboard", "cost": 40, "payout": 110, "risk": "Medium"},
+    {"name": "🎸 Mahogany Ukulele", "cost": 80, "payout": 220, "risk": "High"},
+    {"name": "📥 Pine Desk Organizer", "cost": 20, "payout": 55, "risk": "Low"},
+    {"name": "🪑 Red Oak Milking Stool", "cost": 50, "payout": 135, "risk": "Medium"},
+    {"name": "🐦 Eco-Friendly Birdhouse", "cost": 15, "payout": 40, "risk": "Low"},
+    {"name": "⚔️ Ornamental Wooden Sword", "cost": 30, "payout": 85, "risk": "High"}
+]
+
+# Generate 3 active unique random job offers on first load or refresh
+if 'active_jobs' not in st.session_state:
+    st.session_state.active_jobs = random.sample(JOB_POOL, 3)
+
+# --- PAGE SETUP & SLEEK THEME ---
+st.set_page_config(page_title="Apprentice Dashboard", page_icon="🪵", layout="wide")
+
 st.markdown("""
     <style>
-    .title { font-family: 'Courier New', monospace; font-size: 3rem; text-align: center; color: #D2B48C; font-weight: bold; text-shadow: 2px 2px #5c4033; }
-    .log-box { background-color: #1e1e24; color: #00ffcc; padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; height: 150px; overflow-y: auto; border: 1px solid #333; }
-    .stat-text { font-size: 1.5rem; font-weight: bold; color: #FFA500; }
+    /* Sleek Dark Cyber-Wood Theme Layout */
+    .reportview-container { background: #0e1117; }
+    .main-header { font-family: 'Helvetica Neue', sans-serif; font-weight: 800; font-size: 2.5rem; color: #f4d068; letter-spacing: -1px; }
+    .metric-card { background: #1a1c24; border: 1px solid #2d313f; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+    .metric-val { font-size: 1.8rem; font-weight: bold; color: #ffffff; margin-top: 5px; }
+    .metric-lbl { font-size: 0.9rem; color: #8a92a6; text-transform: uppercase; letter-spacing: 1px; }
+    .slot-card-empty { background: #16171d; border: 2px dashed #3a3f50; padding: 25px; border-radius: 10px; text-align: center; color: #58617a; font-weight: 500; font-size: 1rem; }
+    .slot-card-filled { background: linear-gradient(135deg, #2b2318, #1a140e); border: 2px solid #f4d068; padding: 25px; border-radius: 10px; text-align: center; color: #f4d068; font-weight: bold; box-shadow: 0 4px 15px rgba(244,208,104,0.1); }
+    .log-box { background-color: #0b0c10; color: #a4b3c6; padding: 15px; border-radius: 8px; font-family: monospace; height: 120px; overflow-y: auto; border: 1px solid #22252e; font-size: 0.85rem; line-height: 1.5; }
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<div class='title'>🪚 TIMBER TYCOON: OVERDRIVE</div>", unsafe_allow_html=True)
+# --- HEADER ROW ---
+st.markdown("<div class='main-header'>🪵 Apprentice Workshop Floor</div>", unsafe_allow_html=True)
+st.write("Manage contracts, source supplies, and craft your way up to fill your showcase showroom.")
 st.write("---")
 
-# --- WIN / LOSE CONDITIONS ---
-if st.session_state.coins <= 0:
-    st.error("💀 BANKRUPT! You ran out of timber credits. Your workshop has closed down.")
-    if st.button("Beg Teacher for an Extension (Reset)"):
+# --- LIVE METRIC DASHBOARD ROW ---
+m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+
+with m_col1:
+    st.markdown(f"<div class='metric-card'><div class='metric-lbl'>💳 Bank Balance</div><div class='metric-val' style='color: #00ffcc;'>${st.session_state.balance}</div></div>", unsafe_allow_html=True)
+with m_col2:
+    st.markdown(f"<div class='metric-card'><div class='metric-lbl'>📈 Total Spendings</div><div class='metric-val' style='color: #ff4d4d;'>${st.session_state.spending}</div></div>", unsafe_allow_html=True)
+with m_col3:
+    st.markdown(f"<div class='metric-card'><div class='metric-lbl'>💼 Active Offers</div><div class='metric-val' style='color: #f4d068;'>{len(st.session_state.active_jobs)} Available</div></div>", unsafe_allow_html=True)
+with m_col4:
+    st.markdown(f"<div class='metric-card'><div class='metric-lbl'>🛠️ Completed Jobs</div><div class='metric-val' style='color: #b388ff;'>{st.session_state.completed_count} Done</div></div>", unsafe_allow_html=True)
+
+st.write("")
+
+# --- MAIN WORKSPACE INTERACTION ---
+left_panel, right_panel = st.columns([3, 2])
+
+with left_panel:
+    st.subheader("📋 Available Job Board")
+    st.write("Review material startup costs and execute client commissions:")
+    
+    # Render Job Cards dynamically
+    for index, job in enumerate(st.session_state.active_jobs):
+        with st.container():
+            col_j1, col_j2, col_j3 = st.columns([2, 1, 1])
+            with col_j1:
+                st.markdown(f"**{job['name']}**")
+                st.caption(f"Risk Profile: `{job['risk']}` Risk Matrix")
+            with col_j2:
+                st.markdown(f"<span style='color: #ff4d4d;'>Cost: -${job['cost']}</span>", unsafe_allow_html=True)
+                st.markdown(f"<span style='color: #00ffcc;'>Pay: +${job['payout']}</span>", unsafe_allow_html=True)
+            with col_j3:
+                # Disable if player can't afford upfront costs
+                can_afford = st.session_state.balance >= job['cost']
+                if st.button(f"Accept Contract", key=f"job_{index}", disabled=not can_afford):
+                    # Handle financial flow
+                    st.session_state.balance -= job['cost']
+                    st.session_state.spending += job['cost']
+                    
+                    # Core Luck Roll Mechanics
+                    risk_roll = random.randint(1, 100)
+                    failure_threshold = 10 if job['risk'] == "Low" else (30 if job['risk'] == "Medium" else 50)
+                    
+                    if risk_roll > failure_threshold:
+                        # SUCCESS! Payout and map to slot grid
+                        st.session_state.balance += job['payout']
+                        st.session_state.completed_count += 1
+                        
+                        # Find the first vacant layout slot card to plug item into
+                        assigned_slot = None
+                        for s_key, s_val in st.session_state.slots.items():
+                            if s_val == "Empty":
+                                st.session_state.slots[s_key] = job['name']
+                                assigned_slot = s_key
+                                break
+                        
+                        slot_log = f" placed in {assigned_slot}!" if assigned_slot else " (No free showroom spaces left!)"
+                        st.session_state.logs.append(f"✅ Crafted '{job['name']}' successfully! Netting profit.{slot_log}")
+                    else:
+                        # FAILURE / KNOT / SPLINTER DEFECTS
+                        st.session_state.logs.append(f"❌ Structural Failure! Slipped on assembly blueprint for '{job['name']}'. Scrap discarded.")
+                    
+                    # Cycle board offers instantly
+                    st.session_state.active_jobs = random.sample(JOB_POOL, 3)
+                    st.rerun()
+            st.markdown("<hr style='margin: 8px 0; border-color: #22252e;'>", unsafe_allow_html=True)
+
+with right_panel:
+    st.subheader("📟 Workbench Feed Logs")
+    # Clean terminal stream logger container
+    logs_reversed = "<br>".join([f"🛠️ {log}" for log in reversed(st.session_state.logs)])
+    st.markdown(f"<div class='log-box'>{logs_reversed}</div>", unsafe_allow_html=True)
+    
+    st.write("")
+    if st.button("🔄 Liquidate / Wipe All Storage Boards", type="primary", use_container_width=True):
         st.session_state.clear()
         st.rerun()
-    st.stop()
-
-if st.session_state.coins >= 500:
-    st.balloons()
-    st.success("👑 MASTER CRAFTSMAN! You hit 500+ credits and built a woodworking empire!")
-    if st.button("Start a New Build"):
-        st.session_state.clear()
-        st.rerun()
-    st.stop()
-
-# --- TOP DASHBOARD ---
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric(label="Timber Credits", value=f"{st.session_state.coins}💰")
-with col2:
-    st.metric(label="Reputation XP", value=f"{st.session_state.xp}⭐")
-with col3:
-    # Quick reset
-    if st.button("🔄 Full Reset"):
-        st.session_state.clear()
-        st.rerun()
-
-st.progress(min(st.session_state.coins / 500, 1.0), text=f"Progress to Master Craftsman (500 Credits)")
-
-# --- THE BLUEPRINT SLOT MACHINE ---
-st.header("🎰 1. The Blueprint Generator")
-st.write("Spend **20 Credits** to roll the dice on a random design client assignment.")
-
-# Available random project combinations
-BLUEPRINTS = {
-    "🛹 Skateboard Deck": {"wood": "Tasmanian Oak (Hardwood)", "cost": 40, "payout": 110, "difficulty": "Hard"},
-    "🎸 Custom Ukulele": {"wood": "Mahogany (Premium)", "cost": 60, "payout": 160, "difficulty": "Expert"},
-    "📥 Desktop Organizer": {"wood": "Radiata Pine (Softwood)", "cost": 15, "payout": 45, "difficulty": "Easy"},
-    "🪑 Minimalist Stool": {"wood": "Radiata Pine (Softwood)", "cost": 25, "payout": 65, "difficulty": "Medium"},
-    "🐦 Eco Birdhouse": {"wood": "Recycled Pallet Wood", "cost": 10, "payout": 35, "difficulty": "Easy"}
-}
-
-if st.button("🎰 Pull Design Lever (-20 Credits)", type="primary"):
-    if st.session_state.coins >= 20:
-        st.session_state.coins -= 20
-        rolled_name = random.choice(list(BLUEPRINTS.keys()))
-        st.session_state.current_blueprint = BLUEPRINTS[rolled_name]
-        st.session_state.current_blueprint["name"] = rolled_name
-        st.session_state.game_logs.append(f"Rolled Blueprint: {rolled_name}!")
-        st.rerun()
-    else:
-        st.error("Not enough cash to buy a blueprint!")
-
-# Display current active build details
-if st.session_state.current_blueprint:
-    bp = st.session_state.current_blueprint
-    st.info(f"**Active Project:** {bp['name']} | **Requires:** {bp['wood']} (Costs {bp['cost']} to prep) | **Potential Payout:** {bp['payout']} 💰")
-else:
-    st.warning("No blueprint active. Pull the lever above!")
 
 st.write("---")
 
-# --- INTERACTIVE MANUFACTURING SECTION ---
-st.header("🛠️ 2. The Interactive Workshop Floor")
+# --- THE 10 DISPLAY CARD SLOTS GRID ---
+st.subheader("📦 Workshop Showcase Inventory (10 Slots Total)")
+st.write("Keep your output steady to plug item positions and clean out the blank canvas bays:")
 
-if not st.session_state.current_blueprint:
-    st.write("Waiting for a design contract...")
-else:
-    bp = st.session_state.current_blueprint
-    
-    st.write(f"### Crafting Steps for: {bp['name']}")
-    
-    # User Input 1: Risk Assessment Slider
-    risk_level = st.select_slider(
-        "Select your Crafting Speed / Risk Profile:",
-        options=["Careful & Slow", "Standard Precision", "Rushed / Fast-Track"],
-        value="Standard Precision"
-    )
-    
-    # User Input 2: Tool choice strategy
-    tool_choice = st.radio(
-        "Choose your primary shaping tool for this build:",
-        ["Traditional Hand Tools (High accuracy, low speed)", "Power Machinery (High speed, higher risk of splintering)"]
-    )
-    
-    # The Action Button
-    if st.button("🔥 START THE BUILD (Roll Luck Mechanics)", type="primary"):
-        # Deduct physical wood material cost
-        if st.session_state.coins < bp['cost']:
-            st.error("You don't have enough money left to buy the physical wood for this project! Roll an easier blueprint.")
+# Map out layout positions into responsive grid splits
+slots_keys = list(st.session_state.slots.keys())
+row1_slots = slots_keys[:5]
+row2_slots = slots_keys[5:]
+
+# Render First 5 Slots
+row1_cols = st.columns(5)
+for idx, slot_id in enumerate(row1_slots):
+    item = st.session_state.slots[slot_id]
+    with row1_cols[idx]:
+        if item == "Empty":
+            st.markdown(f"<div class='slot-card-empty'>{slot_id}<br><span style='font-size:0.75rem; color:#434b5e;'>VACANT</span></div>", unsafe_allow_html=True)
         else:
-            st.session_state.coins -= bp['cost']
-            
-            # Base Success Calculations base on inputs
-            success_chance = 75
-            if risk_level == "Careful & Slow":
-                success_chance += 15
-            elif risk_level == "Rushed / Fast-Track":
-                success_chance -= 30
-                
-            if "Hand Tools" in tool_choice and bp['difficulty'] in ["Hard", "Expert"]:
-                success_chance -= 10 # Hand tools on hard wood is tough!
-            
-            # Execute Chance Roll
-            luck_roll = random.randint(1, 100)
-            
-            # Trigger Random Workshop Disaster or Boon (1 in 4 chance)
-            disaster_payout_modifier = 0
-            if random.random() < 0.30:
-                events = [
-                    ("🪓 Knot in Wood!", -20, "Hit a hidden knot structural defect! Value reduced."),
-                    ("🧯 Perfect Joinery!", 30, "The teacher loved your mortise & tenon joints! Bonus payout!"),
-                    ("🩹 Minor Splinter!", -10, "Ouch! Lost time finding the first aid kit."),
-                    ("♻️ Leftover Scraps!", 15, "Sanded efficiently and saved material. Money back!")
-                ]
-                ev_icon, ev_mod, ev_desc = random.choice(events)
-                disaster_payout_modifier = ev_mod
-                st.session_state.game_logs.append(f"EVENT: {ev_icon} {ev_desc} ({' +' if ev_mod > 0 else ''}{ev_mod} Credits)")
+            st.markdown(f"<div class='slot-card-filled'>{slot_id}<br><span style='font-size:0.85rem;'>{item}</span></div>", unsafe_allow_html=True)
 
-            # Determine Build Outcome
-            if luck_roll <= success_chance:
-                # Success!
-                final_earnings = bp['payout'] + disaster_payout_modifier
-                st.session_state.coins += final_earnings
-                st.session_state.xp += 15
-                st.session_state.game_logs.append(f"SUCCESS: Beautifully completed {bp['name']}! Earned {final_earnings} credits.")
-            else:
-                # Failure / Ruined project
-                scrap_value = int(bp['cost'] * 0.3)
-                st.session_state.coins += scrap_value
-                st.session_state.game_logs.append(f"FAIL: Your hand slipped or the machine tore the wood grain. {bp['name']} ruined! Sold as firewood scrap for {scrap_value} credits.")
-            
-            # Clear project queue for next contract
-            st.session_state.current_blueprint = None
-            st.rerun()
+st.write("") # Margin Padding
 
-st.write("---")
-
-# --- GAME LOGS CONTAINER ---
-st.subheader("📟 Workshop Live Telemetry Feed")
-# Reverse logs to show newest at top
-logs_html = "<br>".join([f"&gt; {log}" for log in reversed(st.session_state.game_logs)])
-st.markdown(f"<div class='log-box'>{logs_html}</div>", unsafe_allow_html=True)
+# Render Second 5 Slots
+row2_cols = st.columns(5)
+for idx, slot_id in enumerate(row2_slots):
+    item = st.session_state.slots[slot_id]
+    with row2_cols[idx]:
+        if item == "Empty":
+            st.markdown(f"<div class='slot-card-empty'>{slot_id}<br><span style='font-size:0.75rem; color:#434b5e;'>VACANT</span></div>", unsafe_allow_html=True)
+        else:
+            st.markdown(f"<div class='slot-card-filled'>{slot_id}<br><span style='font-size:0.85rem;'>{item}</span></div>", unsafe_allow_html=True)
