@@ -35,14 +35,14 @@ live_data = load_sheet_medallions()
 
 # Mock user stock balance matrix
 mock_user = {
-    "Spruce": 6, "Pine": 2, "Meranti": 0, "Balsa": 0, "Oak": 0, "Maple": 0,
+    "Spruce": 6, "Pine": 2, "Meranti": 0, "Balsa": 0, "Oak": 0, "Maple", 0,
     "Walnut": 0, "Cherry": 0, "Mahogany": 2, "Ebony": 0, "Rosewood": 1, "Agarwood": 0
 }
 
 st.markdown("<h3 style='font-family:system-ui; color:#FFF;'>MEDALLION SHOWCASE</h3>", unsafe_allow_html=True)
 
 # ====================================================================
-# UNIFIED GRID LAYOUT WITH VISUAL BOUNDARY CORRECTIONS
+# UNIFIED GRID LAYOUT WITH TEXT & SYMBOL ADJUSTMENTS
 # ====================================================================
 html_elements = """
 <style>
@@ -54,7 +54,7 @@ html_elements = """
     .casement-grid {
         display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px;
         padding-top: 150px; 
-        padding-left: 15px; padding-right: 15px; /* Extra breathing room at edges */
+        padding-left: 15px; padding-right: 15px;
     }
     .grid-node {
         position: relative; display: flex; flex-direction: column;
@@ -78,19 +78,17 @@ html_elements = """
     .node-tooltip {
         visibility: hidden; opacity: 0; position: absolute;
         bottom: 110px; left: 50%; transform: translateX(-50%);
-        width: 170px; background: #161925; border: 1px solid #282E48;
+        width: 180px; background: #161925; border: 1px solid #282E48;
         border-radius: 8px; padding: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6);
         z-index: 99999; transition: opacity 0.12s ease-in-out; pointer-events: none;
     }
     .grid-node:hover .node-tooltip { visibility: visible; opacity: 1; }
     
-    /* --- EDGE CLIP BOUNDARY CORRECTIONS --- */
-    /* Forces the first tooltip to stay completely inside the left screen border */
+    /* Edge Clip Protection Rules */
     .grid-node:first-child .node-tooltip {
         left: 0;
         transform: translateX(0);
     }
-    /* Forces the last tooltip to stay completely inside the right screen border */
     .grid-node:last-child .node-tooltip {
         left: auto;
         right: 0;
@@ -116,6 +114,10 @@ for wood_name in MEDALLION_COLUMNS:
         value = sheet_row.get("Value", "N/A")
         availability = sheet_row.get("Availability", "N/A")
         probability = sheet_row.get("Probability", "N/A")
+        
+        # String safety check to guarantee percentage symbols are appended to numbers
+        if probability != "N/A" and not str(probability).endswith("%"):
+            probability = f"{probability}%"
     else:
         rarity, value, availability, probability = "Sync Err", "Sync Err", "Sync Err", "Sync Err"
         
@@ -124,11 +126,11 @@ for wood_name in MEDALLION_COLUMNS:
     html_elements += f"""
     <div class="grid-node">
         <div class="node-tooltip">
-            <div class="tip-line">💎 Name: <span>{wood_name}</span></div>
-            <div class="tip-line">🏷️ Rarity: <span>{rarity}</span></div>
-            <div class="tip-line">💰 Value: <span>{value}</span></div>
-            <div class="tip-line">📦 Avail: <span>{availability} left</span></div>
-            <div class="tip-line">🎲 Prob: <span>{probability}</span></div>
+            <div class="tip-line">Name: <span>{wood_name}</span></div>
+            <div class="tip-line">Rarity: <span>{rarity}</span></div>
+            <div class="tip-line">Value: <span>{value}</span></div>
+            <div class="tip-line">Availability: <span>{availability} left</span></div>
+            <div class="tip-line">Probability: <span>{probability}</span></div>
         </div>
         
         <div class="image-frame">
