@@ -28,6 +28,23 @@ def sync_cloud_data(action_type, payload_data=None):
         st.error(f"Database Connection Error: {str(e)}")
     return {"status": "error", "users": [], "medallions": []}
 
+def load_fresh_medallion_meta():
+    """Fetches real-time parameters straight from the Medallions sheet tab."""
+    backend_res = sync_cloud_data("fetchData")
+    meta_map = {}
+    if backend_res.get("status") == "success":
+        for item in backend_res.get("medallions", []):
+            m_name = item.get("Medallion")
+            if m_name:
+                meta_map[m_name] = {
+                    "Rarity": item.get("Rarity", "Common"),
+                    "Probability": item.get("Probability", "0%"),
+                    "Availability": str(item.get("Availability", "0")),
+                    "Value": item.get("Value") or item.get("Asset Price", "$0"),
+                    "raw_object": item # Kept to make sheet row updates easy later
+                }
+    return meta_map
+
 # --- TRACK SESSION GLOBAL VARIABLES ---
 if 'user_authenticated' not in st.session_state:
     st.session_state.user_authenticated = False
@@ -35,8 +52,6 @@ if 'current_user' not in st.session_state:
     st.session_state.current_user = None
 if 'game_mode' not in st.session_state:
     st.session_state.game_mode = "Dashboard"
-if 'medallion_metadata' not in st.session_state:
-    st.session_state.medallion_metadata = {}
 
 # --- TIMBER RELATED CONTRACT GENERATOR POOL ---
 TIMBER_JOBS = [
@@ -102,7 +117,6 @@ st.markdown("""
         margin-bottom: 25px;
     }
     
-    /* UNIFIED MATRIX GRID STYLING: Enforces structural harmony across all 12 columns */
     .slot-container {
         display: flex;
         flex-direction: column;
@@ -110,7 +124,7 @@ st.markdown("""
         justify-content: flex-start;
         width: 100%;
         text-align: center;
-        position: relative; /* Anchor point context for hovering cards */
+        position: relative;
     }
     
     .medallion-frame-fixed {
@@ -145,12 +159,11 @@ st.markdown("""
         box-sizing: border-box;
     }
     
-    /* --- INTERACTIVE FLOATING HOVER CARD COMPONENT --- */
     .tooltip-card {
         visibility: hidden;
         opacity: 0;
         position: absolute;
-        bottom: 115%; /* Positioned cleanly right above slot line items */
+        bottom: 115%; 
         left: 50%;
         transform: translateX(-50%) translateY(5px);
         width: 185px;
@@ -165,7 +178,6 @@ st.markdown("""
         pointer-events: none;
     }
     
-    /* Reveal card details smoothly on container hover hooks */
     .slot-container:hover .tooltip-card {
         visibility: visible;
         opacity: 1;
@@ -282,19 +294,6 @@ if not st.session_state.user_authenticated:
                         match = next((u for u in users_list if str(u['PIN']) == str(login_pin)), None)
                         
                         if match:
-                            # --- COLUMN PROPERTY EXTRACTOR MATCHING VALUE ---
-                            meta_map = {}
-                            for item in backend_res.get("medallions", []):
-                                m_name = item.get("Medallion")
-                                if m_name:
-                                    # Configured to pull your updated "Value" column directly
-                                    meta_map[m_name] = {
-                                        "Rarity": item.get("Rarity", "Common"),
-                                        "Probability": item.get("Probability", "10%"),
-                                        "Availability": item.get("Availability", "0"),
-                                        "Value": item.get("Value") or item.get("Asset Price", "$0")
-                                    }
-                            st.session_state.medallion_metadata = meta_map
                             st.session_state.current_user = match
                             st.session_state.user_authenticated = True
                             st.success(f"Welcome back, {match['Username']}!")
@@ -405,6 +404,9 @@ if st.session_state.game_mode == "MemoryGame":
 # ==========================================
 # PHASE 3: MAIN TYCOON STUDIO DASHBOARD UI
 # ==========================================
+# Download fresh, real-time metrics on every page load to avoid stale caching!
+live_metadata = load_fresh_medallion_meta()
+
 col_title, col_logout = st.columns([3, 1])
 with col_title:
     st.markdown(f"<div class='dashboard-header'>🪵 {user['Username']}'s Studio Platform</div>", unsafe_allow_html=True)
@@ -416,7 +418,7 @@ with col_logout:
         st.rerun()
 
 # ------------------------------------------------------------
-# 🏅 12-COLUMN MEDALLION SHOWCASE (With Real Spreadsheet Data)
+# 🏅 12-COLUMN MEDALLION SHOWCASE (Live Dynamic Data Hook)
 # ------------------------------------------------------------
 st.markdown("<p style='font-size: 0.85rem; font-weight: 600; color: #A0AEC0; margin-bottom: 14px; letter-spacing:0.5px;'>MEDALLION SHOWCASE CASEMENT</p>", unsafe_allow_html=True)
 badge_cols = st.columns(12)
@@ -424,27 +426,34 @@ badge_cols = st.columns(12)
 for idx, wood_name in enumerate(MEDALLION_COLUMNS):
     display_label = wood_name[:5].upper()
     
-    # Extract structural metadata values downloaded live from the spreadsheet
-    meta = st.session_state.medallion_metadata.get(wood_name, {"Rarity": "Common", "Probability": "15.1%", "Availability": "151", "Value": "$5"})
+    # Read live properties straight from the Google Sheet response
+    meta = live_metadata.get(wood_name, {"Rarity": "Common", "Probability": "10%", "Availability": "0", "Value": "$0"})
     rarity_val = meta.get("Rarity", "Common")
     prob_raw = str(meta.get("Probability", "10"))
     prob_val = prob_raw if "%" in prob_raw else f"{prob_raw}%"
     avail_val = str(meta.get("Availability", "0"))
+    val_cost = str(meta.get("Value", "$0"))
 
     with badge_cols[idx]:
         owned_count = int(user.get(wood_name, 0))
         img_filename = f"assets/{wood_name.lower()}.png"
         img_base64 = get_image_base64(img_filename)
         
+        # Base HTML format for Tooltip Content card context
+        tooltip_html = f"""
+        <div class='tooltip-card'>
+            <div class='tip-line'>💎 Name: <span>{wood_name}</span></div>
+            <div class='tip-line'>🏷️ Rarity: <span>{rarity_val}</span></div>
+            <div class='tip-line'>🎲 Prob: <span>{prob_val}</span></div>
+            <div class='tip-line'>📦 Avail: <span>{avail_val} left</span></div>
+            <div class='tip-line'>💰 Value: <span>{val_cost}</span></div>
+        </div>
+        """
+        
         if owned_count > 0 and img_base64:
             st.markdown(f"""
             <div class='slot-container'>
-                <div class='tooltip-card'>
-                    <div class='tip-line'>💎 Name: <span>{wood_name}</span></div>
-                    <div class='tip-line'>🏷️ Rarity: <span>{rarity_val}</span></div>
-                    <div class='tip-line'>🎲 Prob: <span>{prob_val}</span></div>
-                    <div class='tip-line'>📦 Avail: <span>{avail_val} left</span></div>
-                </div>
+                {tooltip_html}
                 <div class='medallion-frame-fixed'>
                     <img class='medallion-img-render' src='data:image/png;base64,{img_base64}' />
                 </div>
@@ -455,12 +464,7 @@ for idx, wood_name in enumerate(MEDALLION_COLUMNS):
         else:
             st.markdown(f"""
             <div class='slot-container'>
-                <div class='tooltip-card'>
-                    <div class='tip-line'>💎 Name: <span>{wood_name}</span></div>
-                    <div class='tip-line'>🏷️ Rarity: <span>{rarity_val}</span></div>
-                    <div class='tip-line'>🎲 Prob: <span>{prob_val}</span></div>
-                    <div class='tip-line'>📦 Avail: <span>{avail_val} left</span></div>
-                </div>
+                {tooltip_html}
                 <div class='medallion-frame-fixed'>
                     <div class='circle-placeholder-lock'>🔒</div>
                 </div>
@@ -525,9 +529,9 @@ if st.session_state.get('reward_pending', False):
             
             final_award = random.choices(med_names, weights=med_weights, k=1)[0]
             
-            # Locate sheet matching row index row dictionary object
             target_sheet_row = next(m for m in valid_pool if m.get("Medallion") == final_award)
             
+            # Global Medallion Stock Decrement Hook
             new_availability = max(0, int(target_sheet_row.get("Availability", 1)) - 1)
             target_sheet_row["Availability"] = new_availability
             
@@ -624,7 +628,7 @@ with panel_right:
     
     col_b1, col_b2 = st.columns(2)
     with col_b1:
-        spruce_meta = st.session_state.medallion_metadata.get("Spruce", {"Availability": "0"})
+        spruce_meta = live_metadata.get("Spruce", {"Availability": "0"})
         spruce_avail = int(spruce_meta.get("Availability", 0))
         st.markdown("<div style='font-size:0.8rem; font-weight:600; color:#CBD5E0;'>Spruce Lumber</div>", unsafe_allow_html=True)
         st.markdown(f"<div style='font-size:0.75rem; color:#EF4444; margin-bottom:6px;'>Cost: $40 | {spruce_avail} left</div>", unsafe_allow_html=True)
@@ -637,6 +641,7 @@ with panel_right:
             m_pool = backend_res.get("medallions", [])
             target_row = next((m for m in m_pool if m.get("Medallion") == "Spruce"), None)
             if target_row:
+                # Direct Google Sheet Decrement Logic hook executed here
                 target_row["Availability"] = max(0, int(target_row.get("Availability", 1)) - 1)
                 sync_cloud_data("saveMedallion", target_row)
                 
@@ -644,7 +649,7 @@ with panel_right:
             st.rerun()
             
     with col_b2:
-        pine_meta = st.session_state.medallion_metadata.get("Pine", {"Availability": "0"})
+        pine_meta = live_metadata.get("Pine", {"Availability": "0"})
         pine_avail = int(pine_meta.get("Availability", 0))
         st.markdown("<div style='font-size:0.8rem; font-weight:600; color:#CBD5E0;'>Pine Lumber</div>", unsafe_allow_html=True)
         st.markdown(f"<div style='font-size:0.75rem; color:#EF4444; margin-bottom:6px;'>Cost: $50 | {pine_avail} left</div>", unsafe_allow_html=True)
@@ -657,6 +662,7 @@ with panel_right:
             m_pool = backend_res.get("medallions", [])
             target_row = next((m for m in m_pool if m.get("Medallion") == "Pine"), None)
             if target_row:
+                # Direct Google Sheet Decrement Logic hook executed here
                 target_row["Availability"] = max(0, int(target_row.get("Availability", 1)) - 1)
                 sync_cloud_data("saveMedallion", target_row)
                 
