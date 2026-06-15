@@ -48,7 +48,7 @@ if not summary_value.strip().startswith("$") and "Loading" not in summary_value:
     summary_value = f"${summary_value.strip()}"
 
 # ====================================================================
-# UNIFIED GRID LAYOUT WITH INTERACTIVE RARITY COLOR CLASSES
+# UNIFIED GRID LAYOUT WITH INTERACTIVE FULL-CARD THEME COLORS
 # ====================================================================
 html_elements = """
 <style>
@@ -132,14 +132,17 @@ html_elements = """
     
     .tip-line { font-size: 11px; color: #E2E8F0; margin-bottom: 5px; white-space: nowrap; text-align: left; }
     .tip-line:last-child { margin-bottom: 0; }
-    .tip-line span { font-weight: 700; color: #F4D068; }
+    .tip-line span { font-weight: 700; }
 
-    /* Custom Color Themes for the dynamic Rarity tier labels */
-    .tip-line span.rarity-common { color: #CD7F32; }       /* Brownish / Bronze */
-    .tip-line span.rarity-uncommon { color: #C0C0C0; }     /* Silverish */
-    .tip-line span.rarity-rare { color: #3b82f6; }         /* Vibrant Blue */
-    .tip-line span.rarity-epic { color: #a855f7; }         /* Purple */
-    .tip-line span.rarity-legendary { color: #f59e0b; }    /* Gold/Orange */
+    /* Custom Color Themes applied across all values based on rarity */
+    .tip-line span.rarity-common { color: #CD7F32; }       
+    .tip-line span.rarity-uncommon { color: #C0C0C0; }     
+    .tip-line span.rarity-rare { color: #3b82f6; }         
+    .tip-line span.rarity-epic { color: #a855f7; }         
+    .tip-line span.rarity-legendary { color: #f59e0b; }    
+    
+    /* Fallback default color for items loading data */
+    .tip-line span.rarity-loading { color: #F4D068; }
 
     .dashboard-row {
         display: flex; justify-content: center; gap: 20px;
@@ -173,14 +176,13 @@ for wood_name in MEDALLION_COLUMNS:
     lookup_key = wood_name.strip().lower()
     sheet_row = live_data.get(lookup_key, None)
     
-    rarity_class = ""
+    rarity_class = "rarity-loading"
     if sheet_row:
         rarity = sheet_row.get("Rarity", "N/A")
         value = sheet_row.get("Value", "N/A")
         availability = sheet_row.get("Availability", "N/A")
         probability = sheet_row.get("Probability", "N/A")
         
-        # Dynamically assign CSS color selector strings based on string variants
         clean_rarity = str(rarity).strip().lower()
         if "common" in clean_rarity and "uncommon" not in clean_rarity:
             rarity_class = "rarity-common"
@@ -202,14 +204,15 @@ for wood_name in MEDALLION_COLUMNS:
         
     img_b64 = get_image_base64(f"assets/{wood_name.lower()}.png")
     
+    # Applied the rarity_class styling rules dynamically to all target value spans
     html_elements += f"""
     <div class="grid-node">
         <div class="node-tooltip">
-            <div class="tip-line">Name: <span>{wood_name}</span></div>
+            <div class="tip-line">Name: <span class="{rarity_class}">{wood_name}</span></div>
             <div class="tip-line">Rarity: <span class="{rarity_class}">{rarity}</span></div>
-            <div class="tip-line">Value: <span>{value}</span></div>
-            <div class="tip-line">Availability: <span>{availability} left</span></div>
-            <div class="tip-line">Probability: <span>{probability}</span></div>
+            <div class="tip-line">Value: <span class="{rarity_class}">{value}</span></div>
+            <div class="tip-line">Availability: <span class="{rarity_class}">{availability} left</span></div>
+            <div class="tip-line">Probability: <span class="{rarity_class}">{probability}</span></div>
         </div>
         
         <div class="image-frame">
