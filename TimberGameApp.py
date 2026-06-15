@@ -62,7 +62,7 @@ for wood in MEDALLION_COLUMNS:
 asset_map_js += "}"
 
 # ====================================================================
-# UNIFIED GRID LAYOUT WITH LARGE DYNAMIC MINING SEQUENCE CONTAINER
+# UNIFIED GRID LAYOUT WITH ADVANCED OVERFLOW SAFETY WINDOWS
 # ====================================================================
 html_elements = f"""
 <style>
@@ -198,7 +198,6 @@ html_elements = f"""
         margin-top: 25px; min-height: 180px; width: 100%;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
     }}
-    /* Shuffling box dimensions expanded to 140px (2x size enhancement) */
     .spin-box {{
         width: 140px; height: 140px; border-radius: 12px;
         background: #161925; border: 3px solid #23273A;
@@ -207,10 +206,28 @@ html_elements = f"""
     }}
     .spin-box img {{ width: 88%; height: 88%; object-fit: contain; }}
     
-    .outcome-text {{
-        margin-top: 15px; font-size: 15px; font-weight: 700;
-        color: #F4D068; font-family: 'Inter', sans-serif;
-        opacity: 0; transition: opacity 0.2s ease-in-out; letter-spacing: 0.2px;
+    /* New Split-Text Container Layout Styling */
+    .outcome-text-wrapper {{
+        margin-top: 15px;
+        text-align: center;
+        font-family: 'Inter', sans-serif;
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
+    }}
+    .outcome-top {{
+        font-size: 11px;
+        font-weight: 600;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 2px;
+    }}
+    .outcome-bottom {{
+        font-size: 18px;
+        font-weight: 800;
+        color: #F4D068;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }}
 </style>
 
@@ -226,17 +243,11 @@ html_elements = f"""
 for wood_name in MEDALLION_COLUMNS:
     display_label = wood_name[:5].upper()
     
-    # Grab data rows straight from your Google Sheet master tab matrix row array data dictionary
     lookup_key = wood_name.strip().lower()
     sheet_row = live_data.get(lookup_key, None)
     
-    # Render counts dynamically straight from Google Sheets
-    sheet_master_row = live_data.get(f"master_{lookup_key}", None)
-    
-    # Get values matching the dynamic row architecture
     if "medallions" in locals() or True:
         try:
-            # Look up medallion totals directly from live sheet context data matrix mapping arrays
             owned = 0
             if lookup_key == 'spruce': owned = 6
             elif lookup_key == 'pine': owned = 2
@@ -312,7 +323,10 @@ html_elements += f"""
         <div class="spin-box" id="cyclerBox">
             <img id="cyclerImg" src="" />
         </div>
-        <div class="outcome-text" id="outcomeTxt"></div>
+        <div class="outcome-text-wrapper" id="outcomeWrapper">
+            <div class="outcome-top">Successfully Mined:</div>
+            <div class="outcome-bottom" id="itemNameTxt"></div>
+        </div>
     </div>
 </div>
 
@@ -324,10 +338,11 @@ html_elements += f"""
         const btn = document.getElementById('mineBtn');
         const box = document.getElementById('cyclerBox');
         const img = document.getElementById('cyclerImg');
-        const txt = document.getElementById('outcomeTxt');
+        const wrapper = document.getElementById('outcomeWrapper');
+        const itemTxt = document.getElementById('itemNameTxt');
         
         btn.disabled = true;
-        txt.style.opacity = "0";
+        wrapper.style.opacity = "0";
         box.style.display = "flex";
         box.style.borderColor = "#23273A";
         
@@ -353,10 +368,11 @@ html_elements += f"""
                     img.src = assetLibrary[selectedItem];
                 }}
                 box.style.borderColor = "#F4D068";
-                txt.innerText = "SUCCESSFULLY MINED: " + selectedItem.toUpperCase() + " MEDALLION!";
-                txt.style.opacity = "1";
                 
-                // Transmit item confirmation variables back to parent window to prompt Google Sheet incrementing rows
+                // Inject item name cleanly on line 2
+                itemTxt.innerText = selectedItem.toUpperCase() + " MEDALLION!";
+                wrapper.style.opacity = "1";
+                
                 setTimeout(() => {{
                     const curUrl = new URL(window.parent.location.href);
                     curUrl.searchParams.set("mined_item", selectedItem);
@@ -369,5 +385,4 @@ html_elements += f"""
 </script>
 """
 
-# Height adjusted slightly to accommodate the doubled animation size block
 st.components.v1.html(html_elements, height=730, scrolling=False)
