@@ -153,11 +153,11 @@ st.markdown("""
         bottom: 115%; /* Positioned cleanly right above slot line items */
         left: 50%;
         transform: translateX(-50%) translateY(5px);
-        width: 175px;
+        width: 185px;
         background: #171A26;
         border: 1px solid #2E344D;
         border-radius: 10px;
-        padding: 10px 12px;
+        padding: 12px;
         text-align: left;
         box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         z-index: 99999 !important;
@@ -282,14 +282,18 @@ if not st.session_state.user_authenticated:
                         match = next((u for u in users_list if str(u['PIN']) == str(login_pin)), None)
                         
                         if match:
-                            # Cache the spreadsheet metadata directly onto session state dictionary memory
+                            # --- COLUMN PROPERTY EXTRACTOR MATCHING VALUE ---
                             meta_map = {}
                             for item in backend_res.get("medallions", []):
-                                meta_map[item["Medallion"]] = {
-                                    "Rarity": item.get("Rarity", "Common"),
-                                    "Weight": item.get("Weight", "10%"),
-                                    "Availability": item.get("Availability", "Unlimited")
-                                }
+                                m_name = item.get("Medallion")
+                                if m_name:
+                                    # Configured to pull your updated "Value" column directly
+                                    meta_map[m_name] = {
+                                        "Rarity": item.get("Rarity", "Common"),
+                                        "Probability": item.get("Probability", "10%"),
+                                        "Availability": item.get("Availability", "0"),
+                                        "Value": item.get("Value") or item.get("Asset Price", "$0")
+                                    }
                             st.session_state.medallion_metadata = meta_map
                             st.session_state.current_user = match
                             st.session_state.user_authenticated = True
@@ -412,7 +416,7 @@ with col_logout:
         st.rerun()
 
 # ------------------------------------------------------------
-# 🏅 12-COLUMN MEDALLION SHOWCASE (With Details Tooltip Popup Card)
+# 🏅 12-COLUMN MEDALLION SHOWCASE (With Real Spreadsheet Data)
 # ------------------------------------------------------------
 st.markdown("<p style='font-size: 0.85rem; font-weight: 600; color: #A0AEC0; margin-bottom: 14px; letter-spacing:0.5px;'>MEDALLION SHOWCASE CASEMENT</p>", unsafe_allow_html=True)
 badge_cols = st.columns(12)
@@ -420,11 +424,12 @@ badge_cols = st.columns(12)
 for idx, wood_name in enumerate(MEDALLION_COLUMNS):
     display_label = wood_name[:5].upper()
     
-    # Retrieve data parameters out of cached worksheet references
-    meta = st.session_state.medallion_metadata.get(wood_name, {"Rarity": "Common", "Weight": "10%", "Availability": "99"})
+    # Extract structural metadata values downloaded live from the spreadsheet
+    meta = st.session_state.medallion_metadata.get(wood_name, {"Rarity": "Common", "Probability": "15.1%", "Availability": "151", "Value": "$5"})
     rarity_val = meta.get("Rarity", "Common")
-    prob_val = f"{meta.get('Weight', '10')}%"
-    avail_val = meta.get("Availability", "0")
+    prob_raw = str(meta.get("Probability", "10"))
+    prob_val = prob_raw if "%" in prob_raw else f"{prob_raw}%"
+    avail_val = str(meta.get("Availability", "0"))
 
     with badge_cols[idx]:
         owned_count = int(user.get(wood_name, 0))
@@ -491,7 +496,7 @@ with col_met2:
 
 st.write("")
 
-# --- LOOT DROPS REWARD MODAL ---
+# --- LOOT DROPS REWARD MODAL WITH STOCK DEPLOYMENT ---
 if st.session_state.get('reward_pending', False):
     st.markdown("""
     <div style="background: linear-gradient(135deg, #2B2114, #1A140C); border: 1px solid #D4AF37; padding: 24px; border-radius: 16px; margin-bottom: 25px; text-align: center;">
@@ -505,23 +510,26 @@ if st.session_state.get('reward_pending', False):
             backend_res = sync_cloud_data("fetchData")
         medallion_pool = backend_res.get("medallions", [])
         
-        # Filter pool items that have a positive stock count remaining
-        valid_pool = [m for m in medallion_pool if m['Medallion'] in MEDALLION_COLUMNS and int(m.get('Availability', 0)) > 0]
+        valid_pool = []
+        for m in medallion_pool:
+            m_name = m.get("Medallion")
+            m_stock = int(m.get("Availability", 0))
+            if m_name in MEDALLION_COLUMNS and m_stock > 0:
+                valid_pool.append(m)
         
         if not valid_pool:
             st.error("All available medallion stock reserves across the studio network are fully depleted!")
         else:
-            med_names = [m['Medallion'] for m in valid_pool]
-            med_weights = [float(m['Weight']) for m in valid_pool]
+            med_names = [m.get("Medallion") for m in valid_pool]
+            med_weights = [float(str(m.get("Probability", "10")).replace('%', '')) for m in valid_pool]
             
             final_award = random.choices(med_names, weights=med_weights, k=1)[0]
             
-            # Locate the exact selected sheet match object record 
-            target_sheet_row = next(m for m in valid_pool if m['Medallion'] == final_award)
+            # Locate sheet matching row index row dictionary object
+            target_sheet_row = next(m for m in valid_pool if m.get("Medallion") == final_award)
             
-            # Decrement availability count by exactly 1
-            new_availability = max(0, int(target_sheet_row.get('Availability', 1)) - 1)
-            target_sheet_row['Availability'] = new_availability
+            new_availability = max(0, int(target_sheet_row.get("Availability", 1)) - 1)
+            target_sheet_row["Availability"] = new_availability
             
             st.success(f"🏆 Premium Drop Acquired: Added 1x [{final_award} Medallion] onto your studio rack sheet! (Reserves left: {new_availability})")
             
@@ -529,7 +537,6 @@ if st.session_state.get('reward_pending', False):
             st.session_state.reward_pending = False
             
             with st.spinner("Synchronizing server stock reserves & wallet metrics..."):
-                # Save both the updated user document and the updated medallion stock configuration row back up to Google Sheets
                 sync_cloud_data("saveUser", user)
                 sync_cloud_data("saveMedallion", target_sheet_row)
                 
@@ -613,24 +620,46 @@ with panel_right:
     st.markdown("<hr style='border-color: #1E2235; margin: 20px 0;'>", unsafe_allow_html=True)
     
     st.markdown("<div style='font-size: 0.9rem; font-weight: 600; color: #E2E8F0; margin-bottom: 4px;'>🛒 Material Stock Procurement</div>", unsafe_allow_html=True)
-    st.markdown("<div style='font-size: 0.75rem; color: #718096; margin-bottom: 12px;'>Trade liquid capital balances to source component lines directly.</div>", unsafe_allow_html=True)
+    st.markdown("<div style='font-size: 0.75rem; color: #718096; margin-bottom: 12px;'>Trade liquid capital balances to source component lines directly. Sourcing a stock item depletes the global availability pool.</div>", unsafe_allow_html=True)
     
     col_b1, col_b2 = st.columns(2)
     with col_b1:
+        spruce_meta = st.session_state.medallion_metadata.get("Spruce", {"Availability": "0"})
+        spruce_avail = int(spruce_meta.get("Availability", 0))
         st.markdown("<div style='font-size:0.8rem; font-weight:600; color:#CBD5E0;'>Spruce Lumber</div>", unsafe_allow_html=True)
-        st.markdown("<div style='font-size:0.75rem; color:#EF4444; margin-bottom:6px;'>Cost: $40</div>", unsafe_allow_html=True)
-        if st.button("Buy Spruce Stock", use_container_width=True, disabled=int(user['Bank Balance']) < 40):
+        st.markdown(f"<div style='font-size:0.75rem; color:#EF4444; margin-bottom:6px;'>Cost: $40 | {spruce_avail} left</div>", unsafe_allow_html=True)
+        
+        if st.button("Buy Spruce Stock", use_container_width=True, disabled=(int(user['Bank Balance']) < 40 or spruce_avail <= 0)):
             user['Bank Balance'] = int(user['Bank Balance']) - 40
             user['Spruce'] = int(user.get('Spruce', 0)) + 1
+            
+            backend_res = sync_cloud_data("fetchData")
+            m_pool = backend_res.get("medallions", [])
+            target_row = next((m for m in m_pool if m.get("Medallion") == "Spruce"), None)
+            if target_row:
+                target_row["Availability"] = max(0, int(target_row.get("Availability", 1)) - 1)
+                sync_cloud_data("saveMedallion", target_row)
+                
             sync_cloud_data("saveUser", user)
             st.rerun()
             
     with col_b2:
+        pine_meta = st.session_state.medallion_metadata.get("Pine", {"Availability": "0"})
+        pine_avail = int(pine_meta.get("Availability", 0))
         st.markdown("<div style='font-size:0.8rem; font-weight:600; color:#CBD5E0;'>Pine Lumber</div>", unsafe_allow_html=True)
-        st.markdown("<div style='font-size:0.75rem; color:#EF4444; margin-bottom:6px;'>Cost: $50</div>", unsafe_allow_html=True)
-        if st.button("Buy Pine Stock", use_container_width=True, disabled=int(user['Bank Balance']) < 50):
+        st.markdown(f"<div style='font-size:0.75rem; color:#EF4444; margin-bottom:6px;'>Cost: $50 | {pine_avail} left</div>", unsafe_allow_html=True)
+        
+        if st.button("Buy Pine Stock", use_container_width=True, disabled=(int(user['Bank Balance']) < 50 or pine_avail <= 0)):
             user['Bank Balance'] = int(user['Bank Balance']) - 50
             user['Pine'] = int(user.get('Pine', 0)) + 1
+            
+            backend_res = sync_cloud_data("fetchData")
+            m_pool = backend_res.get("medallions", [])
+            target_row = next((m for m in m_pool if m.get("Medallion") == "Pine"), None)
+            if target_row:
+                target_row["Availability"] = max(0, int(target_row.get("Availability", 1)) - 1)
+                sync_cloud_data("saveMedallion", target_row)
+                
             sync_cloud_data("saveUser", user)
             st.rerun()
             
