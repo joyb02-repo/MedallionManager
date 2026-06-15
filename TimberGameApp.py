@@ -2,11 +2,16 @@ import streamlit as st
 import requests
 import random
 import time
+import os
 
 # --- SECURE APPS SCRIPT LINK ---
 API_URL = st.secrets["API_URL"]
 
-MEDALLION_COLUMNS = ["Spruce", "Pine", "Meranti", "Oak", "Maple", "Walnut", "Cherry", "Mahogany", "Rosewood", "Ebony"]
+# Aligned exactly to match the columns in image_8521b8.png
+MEDALLION_COLUMNS = [
+    "Spruce", "Pine", "Meranti", "Balsa", "Oak", "Maple", 
+    "Walnut", "Cherry", "Mahogany", "Ebony", "Rosewood", "Agarwood"
+]
 
 # --- API CORE BACKEND ROUTERS ---
 def sync_cloud_data(action_type, payload_data=None):
@@ -62,19 +67,17 @@ def init_memory_game(payout_value):
     st.session_state.pending_job_payout = payout_value
     st.session_state.game_mode = "MemoryGame"
 
-# --- APPLICATION PRESETS & CONTEMPORARY UI STYLING ---
+# --- CONTEMPORARY UI STYLING ---
 st.set_page_config(page_title="Apprentice Studio Hub", page_icon="🪵", layout="wide")
 
 st.markdown("""
     <style>
-    /* Global Typography Reset & Clean Color Mapping */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
     
     html, body, [class*="css"] {
         font-family: 'Inter', -apple-system, sans-serif;
     }
     
-    /* Top Row Metric Cards styling */
     .dashboard-header {
         font-weight: 800; 
         font-size: 2.6rem; 
@@ -87,6 +90,33 @@ st.markdown("""
         color: #A0AEC0;
         font-size: 1rem;
         margin-bottom: 25px;
+    }
+    
+    .badge-slot {
+        text-align: center;
+        flex: 1;
+    }
+    
+    .circle-placeholder {
+        width: 55px;
+        height: 55px;
+        border-radius: 50%;
+        border: 2px dashed #2D3250;
+        background: #161925;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 6px auto;
+        color: #4A5568;
+        font-size: 0.75rem;
+    }
+    
+    .badge-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: 0.2px;
     }
     
     .panel-box {
@@ -103,7 +133,6 @@ st.markdown("""
         font-size: 1.25rem;
         color: #F4D068;
         margin-bottom: 12px;
-        letter-spacing: -0.5px;
     }
     
     .panel-desc {
@@ -113,7 +142,6 @@ st.markdown("""
         margin-bottom: 20px;
     }
     
-    /* Job Card Styling */
     .job-item {
         background: #1A1D2C;
         border: 1px solid #2D3250;
@@ -129,7 +157,6 @@ st.markdown("""
         margin-bottom: 6px;
     }
     
-    /* Showroom Slots */
     .showroom-preview-row {
         background: #161925;
         border: 1px solid #23283D;
@@ -145,7 +172,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# PHASE 1: LOGIN / SIGNUP PORTAL (CLEAN EDITIONS)
+# PHASE 1: LOGIN / SIGNUP PORTAL
 # ==========================================
 if not st.session_state.user_authenticated:
     st.markdown("<div class='dashboard-header' style='text-align: center; margin-top: 40px;'>🪵 Woodshop Floor Entry</div>", unsafe_allow_html=True)
@@ -156,7 +183,7 @@ if not st.session_state.user_authenticated:
         tab_login, tab_signup = st.tabs(["🔒 Secure PIN Access", "🛠️ Sign Up New Apprentice"])
         
         with tab_login:
-            login_pin = st.text_input("Enter 6-Digit Security PIN", type="password", max_chars=6, key="login_pin_input", help="Enter the 6-digit credential code generated at registration.").strip()
+            login_pin = st.text_input("Enter 6-Digit Security PIN", type="password", max_chars=6, key="login_pin_input").strip()
             st.write("")
             if st.button("Unlock Studio Door", type="primary", use_container_width=True):
                 if len(login_pin) != 6:
@@ -224,7 +251,7 @@ if not st.session_state.user_authenticated:
     st.stop()
 
 # ==========================================
-# PHASE 2: ACTIVE GAME RE-ROUTER (MEMORY GAME BOARD)
+# PHASE 2: ACTIVE GAME RE-ROUTER
 # ==========================================
 user = st.session_state.current_user
 
@@ -241,7 +268,6 @@ if st.session_state.game_mode == "MemoryGame":
         st.session_state.revealed_cards = []
         st.rerun()
 
-    # Dynamic Center Sizing Frame
     col_m1, col_m2, col_m3 = st.columns([1, 2, 1])
     with col_m2:
         grid_cols = st.columns(4)
@@ -291,7 +317,31 @@ with col_logout:
         st.session_state.clear()
         st.rerun()
 
-# --- REAL-TIME HIGHER LEVEL METRIC BANNER CARD SPANS ---
+# ------------------------------------------------------------
+# 🏅 UPDATED 12 CIRCULAR MEDALLION SLOT GRID (Direct Mapping)
+# ------------------------------------------------------------
+st.markdown("<p style='font-size: 0.85rem; font-weight: 600; color: #A0AEC0; margin-bottom: 8px; letter-spacing:0.5px;'>MEDALLION SHOWCASE CASEMENT</p>", unsafe_allow_html=True)
+badge_cols = st.columns(12)
+
+for idx, wood_name in enumerate(MEDALLION_COLUMNS):
+    with badge_cols[idx]:
+        owned_count = int(user.get(wood_name, 0))
+        img_filename = f"assets/{wood_name.lower()}.png"
+        
+        if owned_count > 0 and os.path.exists(img_filename):
+            st.image(img_filename, use_container_width=True)
+            st.markdown(f"<div style='text-align:center; font-size:0.75rem; font-weight:bold; color:#F4D068;'>x{owned_count}</div>", unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div class='badge-slot'>
+                <div class='circle-placeholder'>🔒</div>
+                <div class='badge-label'>{wood_name[:5]}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+st.write("")
+
+# --- REAL-TIME HIGHER LEVEL METRIC BANNER ---
 col_met1, col_met2 = st.columns(2)
 with col_met1:
     st.markdown(f"""
@@ -316,7 +366,7 @@ with col_met2:
 
 st.write("")
 
-# --- LOOT DROPS REWARD MODAL OVERLAY TRIGGER ---
+# --- LOOT DROPS REWARD MODAL ---
 if st.session_state.get('reward_pending', False):
     st.markdown("""
     <div style="background: linear-gradient(135deg, #2B2114, #1A140C); border: 1px solid #D4AF37; padding: 24px; border-radius: 16px; margin-bottom: 25px; text-align: center;">
@@ -335,7 +385,7 @@ if st.session_state.get('reward_pending', False):
         
         if not med_names:
             med_names = MEDALLION_COLUMNS
-            med_weights = [10.0] * 10
+            med_weights = [10.0] * 12
             
         final_award = random.choices(med_names, weights=med_weights, k=1)[0]
         st.success(f"🏆 Premium Drop Acquired: Added 1x [{final_award} Medallion] onto your studio rack sheet!")
@@ -401,7 +451,6 @@ with panel_right:
     st.markdown("<div style='font-size: 0.9rem; font-weight: 600; color: #E2E8F0; margin-bottom: 4px;'>Medallion Stake Machine</div>", unsafe_allow_html=True)
     st.markdown("<div style='font-size: 0.75rem; color: #718096; line-height: 1.4; margin-bottom: 12px;'>Risk an earned medallion item. Roll Even (2, 4, 6) to double its value. Roll Odd and it shatters into scrap wood.</div>", unsafe_allow_html=True)
     
-    # Safely construct options containing only items the user actually owns
     valid_options = [""] + [m for m in MEDALLION_COLUMNS if int(user.get(m, 0)) > 0]
     wager_med = st.selectbox("Select Target Medallion Asset", valid_options, label_visibility="collapsed")
     
