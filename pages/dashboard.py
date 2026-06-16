@@ -89,11 +89,9 @@ asset_map_js += "}"
 # ====================================================================
 html_base_template = """
 <style>
-    /* Added top padding to shift the entire layout down, preventing tooltip clipping */
     body { margin: 0; padding: 45px 0 0 0; background: transparent; font-family: 'Inter', sans-serif; position: relative; }
     .header-wrapper { position: relative; max-width: 100%; margin: 0 auto; padding: 0 15px; text-align: center; }
     
-    /* Logout execution component bounds layout link */
     .logout-btn-global {
         position: absolute; top: -25px; right: 15px; height: 32px; padding: 0 14px;
         background: #161925; border: 1px solid #23273A; border-radius: 6px;
@@ -108,7 +106,6 @@ html_base_template = """
     .portfolio-intro { max-width: 850px; margin: 0 auto 35px auto; font-size: 13px; line-height: 1.6; color: rgba(255, 255, 255, 0.35); }
     .portfolio-intro span { color: rgba(244, 208, 104, 0.8); font-weight: 600; }
     
-    /* Grid spacing adjusted to add clean separation under the title area */
     .casement-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; padding: 0 15px; margin-top: 10px; }
     .grid-node { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
     .image-frame { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
@@ -118,7 +115,6 @@ html_base_template = """
     .quantity-badge { font-size: 12px; font-weight: 700; color: #F4D068; margin-bottom: 3px; min-height: 15px; }
     .label-badge { font-size: 10px; font-weight: 700; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; }
     
-    /* TOOLTIP PERSISTENCE DEPTH OVERRIDE */
     .node-tooltip { 
         visibility: hidden; opacity: 0; position: absolute; top: -120px; left: 50%; 
         transform: translateX(-50%); width: 180px; background: #161925; border: 1px solid #282E48; 
@@ -140,7 +136,9 @@ html_base_template = """
     .dashboard-row { display: flex; justify-content: center; gap: 20px; margin-top: 30px; padding: 0 15px; }
     .stat-card { background: #161925; border: 1px solid #23273A; border-radius: 6px; padding: 10px 20px; min-width: 180px; text-align: center; }
     .stat-label { font-size: 11px; text-transform: uppercase; color: #718096; margin-bottom: 4px; }
-    .stat-value { font-size: 18px; font-weight: 700; color: #FFF; }
+    
+    /* Updated stat-value color directly to the theme's yellowy gold tone */
+    .stat-value { font-size: 18px; font-weight: 700; color: #F4D068; }
     
     .action-container { display: flex; flex-direction: column; align-items: center; margin-top: 25px; width: 100%; }
     .pin-auth-wrapper { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; }
@@ -324,5 +322,4 @@ html_elements = html_elements.replace("__USERNAME_UPPER__", st.session_state["us
 html_elements = html_elements.replace("__PASSCODE_RAW__", st.session_state["user_passcode"])
 html_elements = html_elements.replace("__API_URL_PLACEHOLDER__", API_URL)
 
-# Expanded height bounding box to guarantee tooltip displays cleanly
 st.components.v1.html(html_elements, height=730, scrolling=False)
