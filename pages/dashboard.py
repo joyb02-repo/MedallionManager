@@ -15,8 +15,7 @@ if "authenticated" not in st.session_state or not st.session_state["authenticate
 
 st.set_page_config(page_title="Timber Medallion Portfolio", layout="wide", initial_sidebar_state="collapsed")
 
-# 🎯 THEME DESIGN OVERWRITE: Transforms the top-left layout into a gorgeous horizontal control row
-# 🎯 FORCED THEME DESIGN OVERWRITE: Locks the yellow dimensions and prevents full-width stretching
+# 🎯 FORCED OVERLAY OVERWRITE: Completely decouples buttons from the document layout flow
 st.markdown("""
 <style>
     .stApp {
@@ -26,27 +25,44 @@ st.markdown("""
         background-size: 24px 24px;
     }
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; height: 0px; }
-    div.block-container { padding-top: 20px !important; padding-bottom: 10px !important; max-width: 100% !important; }
+    div.block-container { padding-top: 15px !important; padding-bottom: 10px !important; max-width: 100% !important; }
     
-    /* 🛠️ SPECIFIC CONTAINER RESIZING: Stops the container from hogging 100% of the screen width */
-    div:has(> button[key="sys_route_store_btn"]),
-    div:has(> button[key="sys_refresh_btn"]),
+    /* 🛠️ ABSOLUTE LAYER STRIPPING: Eliminates block heights for top-level utility wrapper structures */
     [data-testid="stVerticalBlock"] > div:nth-child(1),
     [data-testid="stVerticalBlock"] > div:nth-child(2) {
-        display: inline-block !important;
-        width: auto !important;
-        max-width: max-content !important;
-        margin-right: 12px !important;
-        float: left !important;
-    }
-    
-    /* Clear floating positions so the main dashboard matrix clears cleanly below them */
-    [data-testid="stVerticalBlock"] > div:nth-child(3) {
-        clear: both !important;
+        position: absolute !important;
+        height: 0px !important;
+        width: 0px !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
-    /* 🛒 PURE CYBER YELLOW RE-STYLING: Overrides the dark layout seen in image_fa1edb.png */
+    /* 🔄 ABSOLUTE ANCHOR: FIXES REFRESH BUTTON TO THE TOP LEFT */
+    div.stButton > button[key="sys_refresh_btn"] {
+        position: fixed !important;
+        top: 20px !important;
+        left: 20px !important;
+        z-index: 999999 !important;
+        background-color: #161925 !important;
+        border: 1px solid #23273A !important;
+        color: #E2E8F0 !important;
+        font-weight: 600 !important;
+        border-radius: 6px !important;
+        padding: 0.5rem 1.2rem !important;
+        transition: all 0.2s ease !important;
+    }
+    div.stButton > button[key="sys_refresh_btn"]:hover {
+        background-color: #23273A !important;
+        border-color: #718096 !important;
+        color: #FFF !important;
+    }
+
+    /* 🛒 ABSOLUTE ANCHOR: FIXES STORE BUTTON TO THE TOP RIGHT */
     div.stButton > button[key="sys_route_store_btn"] {
+        position: fixed !important;
+        top: 20px !important;
+        right: 20px !important;
+        z-index: 999999 !important;
         background: linear-gradient(135deg, #FFEB3B 0%, #FDD835 100%) !important;
         color: #0E1117 !important;
         font-weight: 700 !important;
@@ -54,47 +70,22 @@ st.markdown("""
         letter-spacing: 0.5px !important;
         border: none !important;
         border-radius: 6px !important;
-        padding: 0.5rem 1.5rem !important;
-        width: auto !important;
-        max-width: fit-content !important;
-        display: inline-flex !important;
+        padding: 0.5rem 1.4rem !important;
         box-shadow: 0 4px 12px rgba(253, 216, 53, 0.2) !important;
         transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease !important;
     }
-    
     div.stButton > button[key="sys_route_store_btn"]:hover {
         transform: scale(1.05) !important;
         background: linear-gradient(135deg, #FFF59D 0%, #FFEB3B 100%) !important;
         box-shadow: 0 6px 18px rgba(253, 216, 53, 0.4) !important;
         color: #0E1117 !important;
-        border: none !important;
     }
-    
     div.stButton > button[key="sys_route_store_btn"]:active {
         transform: scale(0.97) !important;
     }
-
-    /* 🔄 UTILITY RE-STYLING: "UPDATE DATA" COMPANION BUTTON */
-    div.stButton > button[key="sys_refresh_btn"] {
-        background-color: #161925 !important;
-        border: 1px solid #23273A !important;
-        color: #E2E8F0 !important;
-        font-weight: 600 !important;
-        border-radius: 6px !important;
-        padding: 0.5rem 1.5rem !important;
-        width: auto !important;
-        max-width: fit-content !important;
-        display: inline-flex !important;
-        transition: all 0.2s ease !important;
-    }
-    
-    div.stButton > button[key="sys_refresh_btn"]:hover {
-        background-color: #23273A !important;
-        border-color: #718096 !important;
-        color: #FFF !important;
-    }
 </style>
 """, unsafe_allow_html=True)
+
 API_URL = st.secrets["API_URL"]
 
 MEDALLION_COLUMNS = [
@@ -112,14 +103,14 @@ LABEL_MAPPING = {
 # SYSTEM BACKEND PROCESSORS - TOP LEVEL
 # ====================================================================
 
-# Slot 1: Becomes the newly styled gold navbar anchor link
-if st.button("Visit Store 🛒", key="sys_route_store_btn"):
-    st.switch_page("pages/store.py")
-
-# Slot 2: Secondary companion system data refresher
+# Decoupled Action 1: Locks smoothly to Top Left
 if st.button("Update Data 🔄", key="sys_refresh_btn"):
     st.cache_data.clear()
     st.rerun()
+
+# Decoupled Action 2: Locks smoothly to Top Right
+if st.button("Visit Store 🛒", key="sys_route_store_btn"):
+    st.switch_page("pages/store.py")
 
 
 def get_image_base64(path):
@@ -166,7 +157,7 @@ for wood_name in MEDALLION_COLUMNS:
 
 html_base_template = """
 <style>
-    body { margin: 0; padding: 45px 0 0 0; background: transparent; font-family: 'Inter', sans-serif; position: relative; }
+    body { margin: 0; padding: 20px 0 0 0; background: transparent; font-family: 'Inter', sans-serif; position: relative; }
     .header-wrapper { position: relative; max-width: 100%; margin: 0 auto; padding: 0 15px; text-align: center; }
     
     .portfolio-title { font-size: 24px; font-weight: 600; color: #FFFFFF; margin-bottom: 8px; }
