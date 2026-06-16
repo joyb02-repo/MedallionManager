@@ -40,15 +40,16 @@ st.markdown("""
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; height: 0px; }
     div.block-container { padding-top: 20px !important; padding-bottom: 10px !important; max-width: 100% !important; }
     
-    /* 🎯 Completely vaporize the hidden button's container while keeping it in the HTML source */
-    div#hidden-trigger-island {
+    /* 🎯 FLAWLESS TARGET HIDER: Erases the Route button instantly via its explicit backend key token */
+    div[data-testid="stVerticalBlockRoot"] button[key="sys_route_store_btn"],
+    button[key="sys_route_store_btn"] {
         display: none !important;
         visibility: hidden !important;
+        opacity: 0 !important;
         height: 0px !important;
         width: 0px !important;
-        overflow: hidden !important;
-        opacity: 0 !important;
         position: absolute !important;
+        pointer-events: none !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -57,16 +58,14 @@ st.markdown("""
 # SYSTEM BACKEND PROCESSORS - TOP LEVEL
 # ====================================================================
 
-# 1. This button stays visible and fully interactive!
+# 1. This button stays fully visible, clean, and interactive at the top left!
 if st.button("Update Data 🔄", key="sys_refresh_btn"):
     st.cache_data.clear()
     st.rerun()
 
-# 2. We containerize the route button into an isolated HTML block that our CSS hides
-st.markdown('<div id="hidden-trigger-island">', unsafe_allow_html=True)
+# 2. This button is rendered right next to it, but our CSS key override vaporizes it instantly.
 if st.button("Route Store", key="sys_route_store_btn"):
     st.switch_page("pages/store.py")
-st.markdown('</div>', unsafe_allow_html=True)
 
 
 def get_image_base64(path):
