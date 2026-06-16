@@ -17,6 +17,8 @@ if "user_passcode" not in st.session_state:
     st.session_state["user_passcode"] = ""
 if "username" not in st.session_state:
     st.session_state["username"] = "Guest"
+if "refresh_counter" not in st.session_state:
+    st.session_state["refresh_counter"] = 0
 
 MEDALLION_COLUMNS = [
     "Spruce", "Pine", "Meranti", "Balsa", "Oak", "Maple", 
@@ -29,7 +31,7 @@ LABEL_MAPPING = {
     "Mahogany": "MHGN", "Ebony": "EBNY", "Rosewood": "RSWD", "Agarwood": "AGAR"
 }
 
-st.set_page_config(page_title="Timber Medallion Portfolio", layout="wide")
+st.set_page_config(page_title="Timber Medallion Portfolio", layout="wide", initial_sidebar_state="collapsed")
 
 def get_image_base64(path):
     if os.path.exists(path):
@@ -51,7 +53,10 @@ st.markdown("""
     }
     header, [data-testid="stHeader"] { visibility: hidden; height: 0px; }
     
-    /* Center and position the card layout box wrapper cleanly */
+    /* Completely collapse sidebar if it tries to render */
+    [data-testid="stSidebar"] { display: none !important; }
+    
+    /* Center and position the login card layout box wrapper cleanly */
     div[data-testid="stForm"] {
         background: #161925 !important;
         border: 1px solid #23273A !important;
@@ -125,9 +130,6 @@ st.markdown("""
         background-color: #f7d983 !important;
         transform: translateY(-1px);
     }
-    div[data-testid="stForm"] button[kind="primaryFormSubmit"]:active {
-        transform: translateY(0);
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -164,14 +166,13 @@ if not st.session_state["authenticated"]:
 # ARCHITECTURE SPLIT - INTERACTION PANEL B: VERIFIED MASTER ECOSYSTEM
 # ====================================================================
 else:
-    if st.sidebar.button("🔓 Terminal Logout"):
-        st.session_state["authenticated"] = False
-        st.session_state["user_passcode"] = ""
-        st.session_state["username"] = "Guest"
+    # Invisible bridge element that lets JavaScript signal Streamlit to refresh data without losing session authentication
+    if st.text_input("refresh_bridge", key="refresh_trigger", label_visibility="collapsed") != "":
+        st.session_state["refresh_counter"] += 1
         st.rerun()
 
-    @st.cache_data(ttl=1)
-    def fetch_all_sheet_data(passcode):
+    @st.cache_data(ttl=0)
+    def fetch_all_sheet_data(passcode, refresh_run):
         try:
             params = {"action": "fetchData", "passcode": passcode}
             response = requests.get(API_URL, params=params, timeout=15, allow_redirects=True)
@@ -185,7 +186,10 @@ else:
             pass
         return {}, {}, "$0", "0"
 
-    live_data, live_inventory, summary_value, summary_collected = fetch_all_sheet_data(st.session_state["user_passcode"])
+    live_data, live_inventory, summary_value, summary_collected = fetch_all_sheet_data(
+        st.session_state["user_passcode"], 
+        st.session_state["refresh_counter"]
+    )
     
     if not str(summary_value).strip().startswith("$"):
         summary_value = f"${str(summary_value).strip()}"
@@ -200,10 +204,22 @@ else:
     <style>
         body {
             margin: 0; padding: 25px 0 0 0; background: transparent;
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Inter', system-ui, sans-serif; position: relative;
         }
-        .portfolio-title { text-align: center; font-size: 24px; font-weight: 600; color: #FFFFFF; margin-bottom: 8px; }
-        .portfolio-intro { text-align: center; max-width: 800px; margin: 0 auto 20px auto; font-size: 13px; line-height: 1.6; color: rgba(255, 255, 255, 0.25); }
+        .header-wrapper {
+            position: relative; max-width: 1200px; margin: 0 auto; padding: 0 15px; text-align: center;
+        }
+        .logout-btn-global {
+            position: absolute; top: 0; right: 15px; height: 32px; padding: 0 14px;
+            background: #161925; border: 1px solid #23273A; border-radius: 6px;
+            color: #718096; font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.5px; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; gap: 6px;
+        }
+        .logout-btn-global:hover {
+            border-color: #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.05);
+        }
+        .portfolio-title { font-size: 24px; font-weight: 600; color: #FFFFFF; margin-bottom: 8px; }
+        .portfolio-intro { max-width: 800px; margin: 0 auto 20px auto; font-size: 13px; line-height: 1.6; color: rgba(255, 255, 255, 0.25); }
         .portfolio-intro span { color: rgba(244, 208, 104, 0.4); font-weight: 600; }
         .casement-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; padding: 0 15px; }
         .grid-node { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
@@ -255,8 +271,11 @@ else:
         .claim-button:hover { background-color: #F4D068; color: #0E1117; }
     </style>
 
-    <div class="portfolio-title">Timber Medallion Portfolio — __USERNAME_UPPER__</div>
-    <div class="portfolio-intro"> Master tracking dashboard powered directly by your cloud inventory records. Premium tokens scale in rarity up to the single production run <span>Agarwood Medallion</span>.</div>
+    <div class="header-wrapper">
+        <button class="logout-btn-global" onclick="triggerSystemLogout()">🔓 Logout</button>
+        <div class="portfolio-title">Timber Medallion Portfolio — __USERNAME_UPPER__</div>
+        <div class="portfolio-intro"> Master tracking dashboard powered directly by your cloud inventory records. Premium tokens scale in rarity up to the single production run <span>Agarwood Medallion</span>.</div>
+    </div>
 
     <div class="casement-grid">
     __GRID_ITEMS_PLACEHOLDER__
@@ -297,6 +316,19 @@ else:
         const pool = ['Spruce', 'Pine', 'Meranti', 'Balsa', 'Oak', 'Maple', 'Walnut', 'Cherry', 'Mahogany', 'Ebony', 'Rosewood', 'Agarwood'];
         const endpoint = "__API_URL_PLACEHOLDER__";
         let selectedItem = "";
+
+        function triggerSystemLogout() {
+            // Write a dummy string to our hidden input inside Streamlit to cleanly invoke a clear state reset
+            const streamlitDoc = window.parent.document;
+            const inputElements = streamlitDoc.querySelectorAll('input[aria-label="refresh_bridge"]');
+            if(inputElements.length > 0) {
+                inputElements[0].value = "LOGOUT_EXECUTE";
+                inputElements[0].dispatchEvent(new Event('input', { bubbles: true }));
+            } else {
+                // Fallback route if running inside isolated iframe modes
+                window.location.reload();
+            }
+        }
 
         async function evaluatePinAuthorization() {
             const pinValue = document.getElementById("pinField").value.trim();
@@ -375,14 +407,37 @@ else:
             if (!selectedItem) return;
             const claimBtn = document.getElementById('claimBtn'); claimBtn.disabled = true; claimBtn.innerText = "Saving...";
             const pingUrl = endpoint + "?action=mineMedallion&passcode=" + encodeURIComponent("__PASSCODE_RAW__") + "&item=" + encodeURIComponent(selectedItem);
+            
             const imgPing = new Image();
             imgPing.onload = imgPing.onerror = function() {
-                setTimeout(() => { const win = (window.self !== window.top) ? window.parent : window; win.location.reload(); }, 600);
+                setTimeout(() => { 
+                    // Safely tells the underlying layout structure to pull down new dataset values without a logout drop
+                    const streamlitDoc = window.parent.document;
+                    const inputElements = streamlitDoc.querySelectorAll('input[aria-label="refresh_bridge"]');
+                    if(inputElements.length > 0) {
+                        inputElements[0].value = "REFRESH_DATA_FLOW";
+                        inputElements[0].dispatchEvent(new Event('input', { bubbles: true }));
+                    } else {
+                        window.location.reload();
+                    }
+                }, 600);
             };
             imgPing.src = pingUrl;
         }
     </script>
     """
+
+    # Handle page level action hooks passed down from our custom web view component frame
+    if st.session_state["refresh_trigger"] == "LOGOUT_EXECUTE":
+        st.session_state["authenticated"] = False
+        st.session_state["user_passcode"] = ""
+        st.session_state["username"] = "Guest"
+        st.session_state["refresh_trigger"] = ""
+        st.rerun()
+    elif st.session_state["refresh_trigger"] == "REFRESH_DATA_FLOW":
+        st.session_state["refresh_trigger"] = ""
+        st.session_state["refresh_counter"] += 1
+        st.rerun()
 
     grid_elements_html = ""
     for wood_name in MEDALLION_COLUMNS:
