@@ -16,6 +16,7 @@ if "authenticated" not in st.session_state or not st.session_state["authenticate
 st.set_page_config(page_title="Timber Medallion Portfolio", layout="wide", initial_sidebar_state="collapsed")
 
 # 🎯 THEME DESIGN OVERWRITE: Transforms the top-left layout into a gorgeous horizontal control row
+# 🎯 FORCED THEME DESIGN OVERWRITE: Locks the yellow dimensions and prevents full-width stretching
 st.markdown("""
 <style>
     .stApp {
@@ -27,11 +28,14 @@ st.markdown("""
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; height: 0px; }
     div.block-container { padding-top: 20px !important; padding-bottom: 10px !important; max-width: 100% !important; }
     
-    /* 🛠️ HORIZONTAL FLEX ALIGNMENT FOR TOP SYSTEM CONTROLS */
+    /* 🛠️ SPECIFIC CONTAINER RESIZING: Stops the container from hogging 100% of the screen width */
+    div:has(> button[key="sys_route_store_btn"]),
+    div:has(> button[key="sys_refresh_btn"]),
     [data-testid="stVerticalBlock"] > div:nth-child(1),
     [data-testid="stVerticalBlock"] > div:nth-child(2) {
         display: inline-block !important;
         width: auto !important;
+        max-width: max-content !important;
         margin-right: 12px !important;
         float: left !important;
     }
@@ -41,47 +45,56 @@ st.markdown("""
         clear: both !important;
     }
 
-    /* 🛒 THEME OVERWRITE: NATIVE "ROUTE STORE" SYSTEM BUTTON */
-    button[key="sys_route_store_btn"] {
-        background: linear-gradient(135deg, #F4D068 0%, #e0b84c 100%) !important;
+    /* 🛒 PURE CYBER YELLOW RE-STYLING: Overrides the dark layout seen in image_fa1edb.png */
+    div.stButton > button[key="sys_route_store_btn"] {
+        background: linear-gradient(135deg, #FFEB3B 0%, #FDD835 100%) !important;
         color: #0E1117 !important;
         font-weight: 700 !important;
         text-transform: uppercase !important;
         letter-spacing: 0.5px !important;
         border: none !important;
         border-radius: 6px !important;
-        padding: 0.5rem 1.2rem !important;
-        box-shadow: 0 4px 12px rgba(244, 208, 104, 0.15) !important;
+        padding: 0.5rem 1.5rem !important;
+        width: auto !important;
+        max-width: fit-content !important;
+        display: inline-flex !important;
+        box-shadow: 0 4px 12px rgba(253, 216, 53, 0.2) !important;
         transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease !important;
     }
-    button[key="sys_route_store_btn"]:hover {
+    
+    div.stButton > button[key="sys_route_store_btn"]:hover {
         transform: scale(1.05) !important;
-        box-shadow: 0 6px 18px rgba(244, 208, 104, 0.3) !important;
+        background: linear-gradient(135deg, #FFF59D 0%, #FFEB3B 100%) !important;
+        box-shadow: 0 6px 18px rgba(253, 216, 53, 0.4) !important;
         color: #0E1117 !important;
         border: none !important;
     }
-    button[key="sys_route_store_btn"]:active {
+    
+    div.stButton > button[key="sys_route_store_btn"]:active {
         transform: scale(0.97) !important;
     }
 
-    /* 🔄 THEME OVERWRITE: "UPDATE DATA" UTILITY BUTTON */
-    button[key="sys_refresh_btn"] {
+    /* 🔄 UTILITY RE-STYLING: "UPDATE DATA" COMPANION BUTTON */
+    div.stButton > button[key="sys_refresh_btn"] {
         background-color: #161925 !important;
         border: 1px solid #23273A !important;
         color: #E2E8F0 !important;
         font-weight: 600 !important;
         border-radius: 6px !important;
-        padding: 0.5rem 1.2rem !important;
+        padding: 0.5rem 1.5rem !important;
+        width: auto !important;
+        max-width: fit-content !important;
+        display: inline-flex !important;
         transition: all 0.2s ease !important;
     }
-    button[key="sys_refresh_btn"]:hover {
+    
+    div.stButton > button[key="sys_refresh_btn"]:hover {
         background-color: #23273A !important;
         border-color: #718096 !important;
         color: #FFF !important;
     }
 </style>
 """, unsafe_allow_html=True)
-
 API_URL = st.secrets["API_URL"]
 
 MEDALLION_COLUMNS = [
