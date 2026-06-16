@@ -5,6 +5,10 @@ import base64
 
 API_URL = st.secrets["API_URL"]
 
+# Establish default user context (You can wire this up to st.sidebar or log-in later)
+if "username" not in st.session_state:
+    st.session_state["username"] = "joyb02"
+
 MEDALLION_COLUMNS = [
     "Spruce", "Pine", "Meranti", "Balsa", "Oak", "Maple", 
     "Walnut", "Cherry", "Mahogany", "Ebony", "Rosewood", "Agarwood"
@@ -13,19 +17,19 @@ MEDALLION_COLUMNS = [
 st.set_page_config(page_title="Timber Medallion Portfolio", layout="wide")
 
 @st.cache_data(ttl=1)
-def fetch_all_sheet_data():
-    """Queries live details, summaries, and inventory balances from the spreadsheet."""
+def fetch_all_sheet_data(user_id):
+    """Queries details, summary values, and inventories specific to the active user."""
     try:
-        response = requests.post(API_URL, json={"action": "fetchData"}, timeout=15)
+        # Include username context in the post request payload
+        payload = {"action": "fetchData", "username": user_id}
+        response = requests.post(API_URL, json=payload, timeout=15)
         if response.status_code == 200:
             data = response.json()
             if data.get("status") == "success":
                 medallions_map = {str(m["Medallion"]).strip().lower(): m for m in data.get("medallions", [])}
                 master_summary = data.get("master_summary", {})
                 
-                # Capture the incoming inventory tracking block safely
                 inventory_counts = master_summary.get("Inventory", {})
-                
                 val = master_summary.get("CollectionValue", "$0")
                 coll = master_summary.get("MedallionsCollected", "0")
                 
@@ -40,18 +44,23 @@ def get_image_base64(path):
             return base64.b64encode(image_file.read()).decode()
     return None
 
-# Hydrate view records
-live_data, live_inventory, summary_value, summary_collected = fetch_all_sheet_data()
+# Load up dataset bound explicitly to current user row configuration
+live_data, live_inventory, summary_value, summary_collected = fetch_all_sheet_data(st.session_state["username"])
 
 # Process backend claim hooks
 if "mined_item" in st.query_params:
     target_mined = st.query_params["mined_item"]
     try:
-        res = requests.post(API_URL, json={"action": "mineMedallion", "item": target_mined}, timeout=15)
+        payload = {
+            "action": "mineMedallion", 
+            "item": target_mined, 
+            "username": st.session_state["username"]
+        }
+        res = requests.post(API_URL, json=payload, timeout=15)
         if res.status_code == 200:
-            st.cache_data.clear() # Reset cache allocations
-            st.query_params.clear() # Clear URL state parameters
-            st.rerun() # Refresh layout views immediately
+            st.cache_data.clear() 
+            st.query_params.clear() 
+            st.rerun() 
     except Exception as e:
         st.error(f"Failed to record mined item to cloud sheet: {e}")
 
@@ -119,7 +128,7 @@ html_elements = f"""
 </style>
 
 <div class="portfolio-title">Timber Medallion Portfolio</div>
-<div class="portfolio-intro"> Master tracking dashboard powered directly by your cloud inventory records. Premium tokens scale in rarity up to the single production run <span>Agarwood Medallion</span>.</div>
+<div class="portfolio-intro">Master tracking dashboard for user <span>{st.session_state["username"]}</span>. Premium tokens scale in rarity up to the ultra-mythic Agarwood Medallion.</div>
 
 <div class="casement-grid">
 """
@@ -128,15 +137,14 @@ for wood_name in MEDALLION_COLUMNS:
     display_label = wood_name[:5].upper()
     lookup_key = wood_name.strip().lower()
     
-    # Safely pull the parsed quantity from the live inventory dict
     owned = int(live_inventory.get(lookup_key, 0))
-    
     sheet_row = live_data.get(lookup_key, None)
     rarity_class = ""
+    
     if sheet_row:
         rarity = sheet_row.get("Rarity", "N/A")
         value = sheet_row.get("Value", "N/A")
-        availability = sheet_row.get("Availability", "N/A")
+        availability = sheet_row.get("Availability", "N/A")  # This will now display the live auto-calculated remainder!
         probability = sheet_row.get("Probability", "N/A")
         
         clean_rarity = str(rarity).strip().lower()
