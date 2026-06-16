@@ -1,6 +1,6 @@
 # ====================================================================
 # PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
-# FILE: login.py (GATEWAY CONFIGURATION)
+# FILE: login.py (PERFECTLY CENTERED GATEWAY CONFIGURATION)
 # ====================================================================
 
 import streamlit as st
@@ -32,7 +32,16 @@ def get_image_base64(path):
 
 logo_b64 = get_image_base64("assets/login_logo.png")
 
-# Global UI Inject Style Framework for Gateway Box
+# Persistent connection pooling to eliminate first-click false timeout anomalies
+@st.cache_resource(ttl=600)
+def get_http_session():
+    session = requests.Session()
+    adapter = requests.adapters.HTTPAdapter(max_retries=2)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    return session
+
+# Global UI Inject Style Framework - Absolute Centerment Alignments
 st.markdown("""
 <style>
     .stApp {
@@ -43,51 +52,56 @@ st.markdown("""
     }
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; height: 0px; }
     
-    /* Login Form Frame Styling - Moved higher up on the screen */
+    /* Login Box Frame: Moved significantly higher up on the screen */
     div[data-testid="stForm"] {
         background: #161925 !important;
         border: 1px solid #23273A !important;
         border-radius: 12px !important;
-        padding: 40px 40px !important;
+        padding: 40px 45px !important;
         max-width: 440px !important;
-        margin: 50px auto 0 auto !important;
+        margin: 15px auto 0 auto !important;
         box-shadow: 0 20px 45px rgba(0,0,0,0.5) !important;
         text-align: center !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
+        justify-content: center !important;
     }
     
-    /* Bigger Logo Container Configuration */
-    .login-logo-container { width: 100%; text-align: center; margin-bottom: 25px; }
-    .login-logo-container img { max-height: 110px; width: auto; object-fit: contain; }
+    /* Massive Logo Container Configuration */
+    .login-logo-container { width: 100%; text-align: center; margin-bottom: 25px; display: flex; justify-content: center; }
+    .login-logo-container img { max-height: 140px; width: auto; object-fit: contain; }
     
-    .custom-login-header { font-size: 22px; font-weight: 600; color: #FFFFFF; margin-bottom: 10px; letter-spacing: 0.5px; font-family: 'Inter', sans-serif; }
-    .custom-login-sub { font-size: 13px; color: rgba(255, 255, 255, 0.4); margin-bottom: 30px; line-height: 1.5; font-family: 'Inter', sans-serif; }
+    .custom-login-header { font-size: 22px; font-weight: 600; color: #FFFFFF; margin-bottom: 10px; width: 100%; text-align: center !important; letter-spacing: 0.5px; font-family: 'Inter', sans-serif; }
+    .custom-login-sub { font-size: 13px; color: rgba(255, 255, 255, 0.4); margin-bottom: 30px; width: 100%; text-align: center !important; line-height: 1.5; font-family: 'Inter', sans-serif; }
     
-    /* Masked text field box - Kept compact and neat */
-    div[data-testid="stForm"] div[data-testid="stTextInput"] { max-width: 160px !important; margin: 0 auto 10px auto !important; }
+    /* Center text inputs and hidden error frames perfectly */
+    div[data-testid="stForm"] div[data-testid="stTextInput"] { width: 160px !important; margin: 0 auto 5px auto !important; }
     div[data-testid="stForm"] input {
         background-color: #0E1117 !important; border: 1px solid #23273A !important; border-radius: 6px !important;
         color: #FFF !important; text-align: center !important; font-size: 28px !important; font-weight: 700 !important;
         letter-spacing: 6px !important; height: 46px !important; box-sizing: border-box !important; padding: 0px !important;
     }
     
-    /* Centering layout rule for the Form Submit Button container row */
+    /* absolute override to bypass Streamlit's left-aligned layout constraints */
     div[data-testid="stForm"] div.stFormSubmitButton {
         display: flex !important;
         justify-content: center !important;
+        align-items: center !important;
         width: 100% !important;
-        margin-top: 15px !important;
+        text-align: center !important;
+        margin: 20px auto 0 auto !important;
     }
     
     div[data-testid="stForm"] button[kind="primaryFormSubmit"] {
-        width: 200px !important; height: 44px !important; background-color: #F4D068 !important; border: none !important; border-radius: 6px !important;
+        width: 220px !important; height: 44px !important; background-color: #F4D068 !important; border: none !important; border-radius: 6px !important;
         color: #0E1117 !important; font-size: 13px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 1.5px !important;
+        margin: 0 auto !important; display: block !important;
     }
     
-    /* Remove the native 'Press Enter to submit form' utility guidance text prompt completely */
-    p[data-testid="stFormSubmitButtonHelp"] { display: none !important; visibility: hidden; height: 0px !important; margin: 0px !important; padding: 0px !important; }
+    /* Clean text line resets */
+    p[data-testid="stFormSubmitButtonHelp"] { display: none !important; visibility: hidden; height: 0px !important; }
+    div[data-testid="stAlert"] { margin-top: 15px !important; width: 100% !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -97,7 +111,6 @@ with st.form("secure_login_gateway"):
     st.markdown('<div class="custom-login-header">Portfolio System Access</div>', unsafe_allow_html=True)
     st.markdown('<div class="custom-login-sub">Enter your 4-digit master passcode key to authenticate transaction nodes.</div>', unsafe_allow_html=True)
     
-    # Text input field configuration with masked parameter data handling
     input_passcode = st.text_input("Passcode", type="password", label_visibility="collapsed", max_chars=4)
     submit_btn = st.form_submit_button("Verify Passcode")
     
@@ -107,7 +120,10 @@ with st.form("secure_login_gateway"):
         else:
             with st.spinner("AUTHENTICATING..."):
                 try:
-                    chk = requests.get(API_URL, params={"action": "fetchData", "passcode": input_passcode}, timeout=12)
+                    # Leverage the persistent connection pool to defend against the network dropout anomalies
+                    http_client = get_http_session()
+                    chk = http_client.get(API_URL, params={"action": "fetchData", "passcode": input_passcode}, timeout=15)
+                    
                     if chk.status_code == 200 and chk.json().get("status") == "success":
                         st.session_state["user_passcode"] = input_passcode
                         st.session_state["username"] = chk.json().get("username", "User")
@@ -115,5 +131,6 @@ with st.form("secure_login_gateway"):
                         st.switch_page("pages/dashboard.py")
                     else:
                         st.error("Access Denied: Passcode signature validation rejected.")
-                except:
+                except Exception as e:
+                    # Network pipeline protection fallback
                     st.error("System Matrix Timeout. Please check your network connection.")
