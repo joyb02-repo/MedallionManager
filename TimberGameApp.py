@@ -40,8 +40,6 @@ def get_image_base64(path):
 # ====================================================================
 # ADVANCED CUSTOM STYLING - FORCING STREAMLIT ELEMENT RE-DESIGN
 # ====================================================================
-# This styles native Streamlit inputs to match our exact cyberpunk theme, 
-# completely bypassing security limits while maintaining the high-fidelity UI.
 st.markdown("""
 <style>
     /* Global Background Override */
@@ -53,7 +51,7 @@ st.markdown("""
     }
     header, [data-testid="stHeader"] { visibility: hidden; height: 0px; }
     
-    /* Centralizing and Styling the Native Form to look like a premium card */
+    /* Styling the Native Form to look like a premium card */
     div[data-testid="stForm"] {
         background: #161925 !important;
         border: 1px solid #23273A !important;
@@ -65,7 +63,6 @@ st.markdown("""
         text-align: center !important;
     }
     
-    /* Custom Title Styling inside the Login view */
     .custom-login-header {
         font-size: 22px; font-weight: 600; color: #FFFFFF; margin-bottom: 8px; letter-spacing: 0.5px;
     }
@@ -118,12 +115,10 @@ st.markdown("""
 # ====================================================================
 if not st.session_state["authenticated"]:
     
-    # Render native, un-blockable container blocks hidden under gorgeous custom styling rules
     with st.form("secure_login_gateway"):
         st.markdown('<div class="custom-login-header">Portfolio System Access</div>', unsafe_allow_html=True)
         st.markdown('<div class="custom-login-sub">Enter your 4-digit master passcode key to authenticate transaction nodes.</div>', unsafe_allow_html=True)
         
-        # Native input fields styled beautifully
         input_passcode = st.text_input("Passcode", type="password", label_visibility="collapsed", max_chars=4)
         submit_btn = st.form_submit_button("Verify Passcode")
         
@@ -148,7 +143,6 @@ if not st.session_state["authenticated"]:
 # ARCHITECTURE SPLIT - INTERACTION PANEL B: VERIFIED MASTER ECOSYSTEM
 # ====================================================================
 else:
-    # Sidebar logout feature works perfectly without iframe-to-parent dependencies
     if st.sidebar.button("🔓 Terminal Logout"):
         st.session_state["authenticated"] = False
         st.session_state["user_passcode"] = ""
@@ -283,7 +277,7 @@ else:
         const endpoint = "__API_URL_PLACEHOLDER__";
         let selectedItem = "";
 
-        function evaluatePinAuthorization() {
+        async function evaluatePinAuthorization() {
             const pinValue = document.getElementById("pinField").value.trim();
             const feedback = document.getElementById("feedbackMsg");
             const verifyBtn = document.getElementById("verifyBtn");
@@ -300,28 +294,39 @@ else:
             feedback.style.color = "#718096"; 
             feedback.innerText = "Authenticating code...";
             
-            const queryUrl = endpoint + "?action=verifyPin&pin=" + encodeURIComponent(pinValue);
-            const imgPing = new Image();
-            
-            imgPing.onload = imgPing.onerror = function() {
-                setTimeout(async () => {
-                    try {
-                        const res = await fetch(endpoint + "?action=fetchData&passcode=__PASSCODE_RAW__");
-                        const data = await res.json();
-                        feedback.style.color = "#10b981"; 
-                        feedback.innerText = "Access granted! Mining console unlocked.";
-                        document.getElementById("pinField").disabled = true; 
-                        verifyBtn.style.display = "none"; 
-                        mineBtn.disabled = false;
-                    } catch(e) {
-                        feedback.style.color = "#ef4444"; 
-                        feedback.innerText = "Invalid or expired security code.";
-                        verifyBtn.disabled = false; 
-                        verifyBtn.innerText = "Verify PIN";
-                    }
-                }, 600);
-            };
-            imgPing.src = queryUrl;
+            try {
+                // Fetch validation confirmation payload securely 
+                const queryUrl = endpoint + "?action=verifyPin&pin=" + encodeURIComponent(pinValue);
+                const response = await fetch(queryUrl);
+                const result = await response.json();
+                
+                // CRITICAL VALIDATION: Terminate flow immediately if status metadata indicates 'Expired'
+                if (result.status === "Expired" || result.message === "Expired") {
+                    feedback.style.color = "#ef4444"; 
+                    feedback.innerText = "This security code has Expired.";
+                    verifyBtn.disabled = false; 
+                    verifyBtn.innerText = "Verify PIN";
+                    return;
+                }
+                
+                if (result.status === "success") {
+                    feedback.style.color = "#10b981"; 
+                    feedback.innerText = "Access granted! Mining console unlocked.";
+                    document.getElementById("pinField").disabled = true; 
+                    verifyBtn.style.display = "none"; 
+                    mineBtn.disabled = false;
+                } else {
+                    feedback.style.color = "#ef4444"; 
+                    feedback.innerText = "Invalid security code signature.";
+                    verifyBtn.disabled = false; 
+                    verifyBtn.innerText = "Verify PIN";
+                }
+            } catch(e) {
+                feedback.style.color = "#ef4444"; 
+                feedback.innerText = "Error verifying PIN. Try again.";
+                verifyBtn.disabled = false; 
+                verifyBtn.innerText = "Verify PIN";
+            }
         }
 
         document.getElementById("pinField")?.addEventListener("keydown", function(event) {
