@@ -80,9 +80,9 @@ if not st.session_state["authenticated"]:
     """, unsafe_allow_html=True)
     
     # Render UI Structure
-    st.markdown('<div class="login-wrapper"><div class="login-card">', unsafe_with_html=None, unsafe_allow_html=True)
-    st.markdown('<div class="login-title">Portfolio System Access</div>', unsafe_with_html=None, unsafe_allow_html=True)
-    st.markdown('<div class="login-subtitle">Enter your 4-digit master passcode key to authenticate transaction nodes.</div>', unsafe_with_html=None, unsafe_allow_html=True)
+    st.markdown('<div class="login-wrapper"><div class="login-card">', unsafe_allow_html=True)
+    st.markdown('<div class="login-title">Portfolio System Access</div>', unsafe_allow_html=True)
+    st.markdown('<div class="login-subtitle">Enter your 4-digit master passcode key to authenticate transaction nodes.</div>', unsafe_allow_html=True)
     
     # Native Streamlit Form to manage clean state actions
     with st.form("login_form", clear_on_submit=False):
