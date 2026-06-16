@@ -1,6 +1,6 @@
 # ====================================================================
 # PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
-# FILE: login.py (MOBILE OPTIMIZED RESPONSIVE DESIGN)
+# FILE: login.py (SCREEN-CENTERED RESPONSIVE DESIGN)
 # ====================================================================
 
 import streamlit as st
@@ -41,15 +41,33 @@ def get_http_session():
     session.mount("http://", adapter)
     return session
 
-# Global UI Style Framework - Responsive layout with fallback mobile scaling rules
+# Global UI Style Framework - Responsive layout centered perfectly on the screen view
 st.markdown("""
 <style>
+    /* Force the entire app canvas to fill the viewport and center contents perfectly */
     .stApp {
         background-color: #0E1117;
         background-image: linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
                           linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
         background-size: 24px 24px;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        min-height: 100vh !important;
+        height: 100vh !important;
+        overflow: hidden !important; /* Eliminates accidental vertical scrollbars entirely */
     }
+    
+    /* Remove default main block container paddings that push layouts downward */
+    div.block-container {
+        padding: 0 !important;
+        max-width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+    
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; height: 0px; }
     
     /* REMOVE THE MASSIVE OUTER DIALOGUE BACKGROUND CONTAINER */
@@ -58,17 +76,20 @@ st.markdown("""
         border: none !important;
         box-shadow: none !important;
         padding: 0 !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
     }
     
-    /* Target the central login block frame - Made fully fluid for mobile aspect ratios */
+    /* Target the central login block frame - Locked perfectly into dead center alignment */
     div[data-testid="stVerticalBlock"]:has(div.login-card-anchor) {
         background: #161925 !important;
         border: 1px solid #23273A !important;
         border-radius: 12px !important;
         padding: 40px 45px !important;
         max-width: 440px !important;
-        width: 92% !important;
-        margin: 60px auto 0 auto !important;
+        width: 440px !important;
+        margin: 0 auto !important; /* Removed static top margin displacement */
         box-shadow: 0 20px 45px rgba(0,0,0,0.5) !important;
         text-align: center !important;
         box-sizing: border-box !important;
@@ -184,7 +205,8 @@ st.markdown("""
     @media (max-width: 480px) {
         div[data-testid="stVerticalBlock"]:has(div.login-card-anchor) {
             padding: 30px 20px !important; /* Reduces outer layout edges compression */
-            margin: 30px auto 0 auto !important; /* Balances card distance from top screen boundary */
+            width: 92% !important;
+            margin: 0 auto !important;
         }
         .custom-login-header {
             font-size: 19px !important; /* Slightly reduces font size to prevent unnatural character line breaks */
