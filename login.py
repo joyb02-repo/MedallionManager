@@ -1,6 +1,6 @@
 # ====================================================================
 # PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
-# FILE: login.py (FUNCTIONAL HYBRID BLOCK WITH HOVER STATES)
+# FILE: login.py (PERFECT MOD-BUTTON + ACTIVE FUNCTIONALITY)
 # ====================================================================
 
 import streamlit as st
@@ -41,7 +41,7 @@ def get_http_session():
     session.mount("http://", adapter)
     return session
 
-# Global UI Inject Style Framework - Stretched Interactive Layout Engine
+# Global UI Inject Style Framework - The perfect modern design + interactive states
 st.markdown("""
 <style>
     .stApp {
@@ -52,7 +52,7 @@ st.markdown("""
     }
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; height: 0px; }
     
-    /* Login Box Frame: Anchored at a uniform width of 440px high up on screen */
+    /* Login Box Frame: Uniform width, lifted clean to the top */
     div[data-testid="stForm"] {
         background: #161925 !important;
         border: 1px solid #23273A !important;
@@ -76,28 +76,28 @@ st.markdown("""
     .custom-login-header { font-size: 22px; font-weight: 600; color: #FFFFFF; margin-bottom: 10px; width: 100%; text-align: center !important; letter-spacing: 0.5px; font-family: 'Inter', sans-serif; }
     .custom-login-sub { font-size: 13px; color: rgba(255, 255, 255, 0.4); margin-bottom: 30px; width: 100%; text-align: center !important; line-height: 1.5; font-family: 'Inter', sans-serif; }
     
-    /* Passcode Entry Sizing Constraints */
-    div[data-testid="stForm"] div[data-testid="stTextInput"] { width: 160px !important; margin: 0 auto 5px auto !important; }
+    /* Passcode Entry Frame: Compact layout box matching modern specs */
+    div[data-testid="stForm"] div[data-testid="stTextInput"] { max-width: 220px !important; width: 220px !important; margin: 0 auto 5px auto !important; }
     div[data-testid="stForm"] input {
         background-color: #0E1117 !important; border: 1px solid #23273A !important; border-radius: 6px !important;
-        color: #FFF !important; text-align: center !important; font-size: 28px !important; font-weight: 700 !important;
-        letter-spacing: 6px !important; height: 46px !important; box-sizing: border-box !important; padding: 0px !important;
+        color: #FFF !important; text-align: center !important; font-size: 24px !important; font-weight: 700 !important;
+        letter-spacing: 6px !important; height: 46px !important; box-sizing: border-box !important;
     }
     
-    /* HYBRID RE-ENGINEERED FULL-WIDTH BUTTON OVERRIDE */
+    /* STRETCHED NATIVE BUTTON FIX: Spans the container width flawlessly while maintaining native action execution */
     div[data-testid="stForm"] div.stFormSubmitButton {
         display: block !important;
         width: 100% !important;
-        margin: 20px 0 0 0 !important;
+        margin: 25px 0 0 0 !important;
         padding: 0 !important;
-    }}
+    }
     
     div[data-testid="stForm"] button[kind="primaryFormSubmit"] {
         width: 100% !important; 
-        height: 48px !important; 
+        height: 50px !important; 
         background-color: #F4D068 !important; 
         border: none !important; 
-        border-radius: 6px !important;
+        border-radius: 8px !important;
         color: #0E1117 !important; 
         font-size: 14px !important; 
         font-weight: 700 !important; 
@@ -107,25 +107,25 @@ st.markdown("""
         margin: 0 !important;
         display: block !important;
         cursor: pointer !important;
-        /* Animation & Smooth Interpolation Transforms */
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
         box-shadow: 0 4px 12px rgba(244, 208, 104, 0.1) !important;
-    }}
+        /* Dynamic state transition timing */
+        transition: all 0.2s ease-in-out !important;
+    }
     
-    /* HIGH FIDELITY HOVER INDICES */
-    div[data-testid="stForm"] button[kind="primaryFormSubmit"]:hover {{
+    /* Crisp Hover Effects on New Button Archetype */
+    div[data-testid="stForm"] button[kind="primaryFormSubmit"]:hover {
         background-color: #f5d77f !important;
         transform: translateY(-1px) !important;
         box-shadow: 0 6px 20px rgba(244, 208, 104, 0.25) !important;
-    }}
+    }
     
-    div[data-testid="stForm"] button[kind="primaryFormSubmit"]:active {{
+    div[data-testid="stForm"] button[kind="primaryFormSubmit"]:active {
         transform: translateY(1px) !important;
         box-shadow: 0 2px 8px rgba(244, 208, 104, 0.1) !important;
-    }}
+    }
     
-    /* Clean text line resets */
-    p[data-testid="stFormSubmitButtonHelp"] { display: none !important; visibility: hidden; height: 0px !important; }
+    /* Clean text line resets & hidden helpers */
+    p[data-testid="stFormSubmitButtonHelp"] { display: none !important; visibility: hidden; height: 0px !important; margin: 0px !important; padding: 0px !important; }
     div[data-testid="stAlert"] { margin-top: 15px !important; width: 100% !important; }
 </style>
 """, unsafe_allow_html=True)
@@ -136,6 +136,7 @@ with st.form("secure_login_gateway"):
     st.markdown('<div class="custom-login-header">Portfolio System Access</div>', unsafe_allow_html=True)
     st.markdown('<div class="custom-login-sub">Enter your 4-digit master passcode key to authenticate transaction nodes.</div>', unsafe_allow_html=True)
     
+    # Text input field configuration with masked data handling + native interactive eye toggle support
     input_passcode = st.text_input("Passcode", type="password", label_visibility="collapsed", max_chars=4)
     submit_btn = st.form_submit_button("Verify Passcode")
     
