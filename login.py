@@ -1,6 +1,6 @@
 # ====================================================================
 # PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
-# FILE: login.py (SCREEN-CENTERED RESPONSIVE DESIGN)
+# FILE: login.py (ZERO-SCROLL FIXED CANVAS DESIGN)
 # ====================================================================
 
 import streamlit as st
@@ -41,31 +41,29 @@ def get_http_session():
     session.mount("http://", adapter)
     return session
 
-# Global UI Style Framework - Responsive layout centered perfectly on the screen view
+# Global UI Style Framework - Completely overrides Streamlit container heights to force 0-scroll vertical centering
 st.markdown("""
 <style>
-    /* Force the entire app canvas to fill the viewport and center contents perfectly */
+    /* Absolute reset of all nested parent containers that cause clipping or overflowing */
+    html, body, .stApp, [data-testid="stMain"], [data-testid="stMainContainer"], .main, .block-container {
+        margin: 0 !important;
+        padding: 0 !important;
+        height: 100dvh !important;
+        min-height: 100dvh !important;
+        max-height: 100dvh !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        box-sizing: border-box !important;
+    }
+
     .stApp {
         background-color: #0E1117;
         background-image: linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
                           linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
         background-size: 24px 24px;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: center !important;
-        align-items: center !important;
-        min-height: 100vh !important;
-        height: 100vh !important;
-        overflow: hidden !important; /* Eliminates accidental vertical scrollbars entirely */
-    }
-    
-    /* Remove default main block container paddings that push layouts downward */
-    div.block-container {
-        padding: 0 !important;
-        max-width: 100% !important;
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
     }
     
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; height: 0px; }
@@ -76,12 +74,13 @@ st.markdown("""
         border: none !important;
         box-shadow: none !important;
         padding: 0 !important;
+        width: 100% !important;
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
     }
     
-    /* Target the central login block frame - Locked perfectly into dead center alignment */
+    /* Target the central login block frame - Uniform vertical spacing locked dynamically on screen sizes */
     div[data-testid="stVerticalBlock"]:has(div.login-card-anchor) {
         background: #161925 !important;
         border: 1px solid #23273A !important;
@@ -89,13 +88,14 @@ st.markdown("""
         padding: 40px 45px !important;
         max-width: 440px !important;
         width: 440px !important;
-        margin: 0 auto !important; /* Removed static top margin displacement */
+        margin: 0 auto !important; 
         box-shadow: 0 20px 45px rgba(0,0,0,0.5) !important;
         text-align: center !important;
         box-sizing: border-box !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
+        justify-content: center !important;
     }
     
     /* Massive Logo Container Framework */
@@ -105,7 +105,7 @@ st.markdown("""
     .custom-login-header { font-size: 22px; font-weight: 600; color: #FFFFFF; margin-bottom: 10px; width: 100%; text-align: center !important; letter-spacing: 0.5px; font-family: 'Inter', sans-serif; }
     .custom-login-sub { font-size: 13px; color: rgba(255, 255, 255, 0.4); margin-bottom: 30px; width: 100%; text-align: center !important; line-height: 1.5; font-family: 'Inter', sans-serif; }
     
-    /* Sized perfectly for 4 digits text string length entries */
+    /* Sized perfectly for 4 digits entries */
     div.stTextInput { width: 160px !important; margin: 0 auto 5px auto !important; }
     
     /* Targets base element engine framework layer to line components up vertically */
@@ -176,7 +176,7 @@ st.markdown("""
         transition: all 0.2s ease-in-out !important;
     }
     
-    /* High Fidelity Interactive Hover Parameters */
+    /* Interactive Hover Parameters */
     div.stButton > button:hover {
         background-color: #f5d77f !important;
         color: #0E1117 !important;
@@ -204,12 +204,13 @@ st.markdown("""
        ==================================================================== */
     @media (max-width: 480px) {
         div[data-testid="stVerticalBlock"]:has(div.login-card-anchor) {
-            padding: 30px 20px !important; /* Reduces outer layout edges compression */
-            width: 92% !important;
+            padding: 30px 20px !important; 
+            width: 90% !important;
+            max-width: 90% !important;
             margin: 0 auto !important;
         }
         .custom-login-header {
-            font-size: 19px !important; /* Slightly reduces font size to prevent unnatural character line breaks */
+            font-size: 19px !important; 
         }
         .custom-login-sub {
             font-size: 12px !important;
@@ -219,17 +220,17 @@ st.markdown("""
             margin-bottom: 15px !important;
         }
         .login-logo-container img {
-            max-height: 110px !important; /* Scales down logo slightly to optimize display real estate */
+            max-height: 100px !important; 
         }
         div.stTextInput {
-            width: 150px !important; /* Keeps structural parameters tightly bound to center canvas column */
+            width: 140px !important; 
         }
         div.stTextInput input {
-            font-size: 21px !important; /* Minimizes font tracking scale to fully protect layout alignment ratios */
+            font-size: 21px !important; 
             letter-spacing: 4px !important;
         }
         div.stButton > button {
-            height: 46px !important; /* Makes login submission trigger touch friendly but visually elegant */
+            height: 46px !important; 
             font-size: 13px !important;
         }
     }
