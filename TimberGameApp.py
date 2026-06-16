@@ -17,25 +17,28 @@ MEDALLION_COLUMNS = [
 st.set_page_config(page_title="Timber Medallion Portfolio", layout="wide")
 
 # ====================================================================
-# PHASE 1: PROCESS INBOUND CLAIMS BEFORE RETRIEVING LIVE DATA
+# PHASE 1: NATIVE CLAIM BACKEND SYNC (NO FLAKY URL PARAMS)
 # ====================================================================
-# Moving this block to the very top guarantees that increments hit the sheet
-# before fetch_all_sheet_data executes, preventing the "Saving..." loop hang.
-if "mined_item" in st.query_params:
-    target_mined = st.query_params["mined_item"]
+def process_claim_to_google_sheets(item_name):
     try:
         payload = {
             "action": "mineMedallion", 
-            "item": target_mined, 
+            "item": item_name, 
             "username": st.session_state["username"]
         }
         res = requests.post(API_URL, json=payload, timeout=15)
         if res.status_code == 200:
             st.cache_data.clear() 
-            st.query_params.clear() 
-            st.rerun() 
+            st.success(f"Successfully saved {item_name} to your spreadsheet!")
+            st.rerun()
     except Exception as e:
         st.error(f"Failed to record mined item to cloud sheet: {e}")
+
+# Create a hidden native streamlit container to capture javascript callback events
+if "hidden_claim_item" in st.session_state and st.session_state["hidden_claim_item"]:
+    claim_target = st.session_state["hidden_claim_item"]
+    st.session_state["hidden_claim_item"] = None # Reset state
+    process_claim_to_google_sheets(claim_target)
 
 @st.cache_data(ttl=1)
 def fetch_all_sheet_data(user_id):
@@ -121,7 +124,6 @@ html_elements = f"""
     .mine-button:hover {{ transform: scale(1.05); }}
     .mine-button:disabled {{ opacity: 0.6; cursor: not-allowed; transform: scale(1) !important; background-color: #23273A !important; color: #718096 !important; }}
     
-    /* Strict height rules applied below to fix layout position shifts when switching states */
     .animation-display {{ margin-top: 25px; height: 240px; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }}
     .spin-box {{ width: 140px; height: 140px; min-height: 140px; border-radius: 12px; background: #161925; border: 3px solid #23273A; display: none; align-items: center; justify-content: center; box-sizing: border-box; }}
     .spin-box img {{ width: 88%; height: 88%; object-fit: contain; }}
@@ -228,8 +230,6 @@ html_elements += f"""
         wrapper.style.opacity = "0";
         claimBtn.classList.remove('visible');
         box.style.display = "flex";
-        
-        // Lock explicit border color style variations during processing to keep asset frame fixed
         box.style.borderColor = "#23273A";
         
         let counter = 0;
@@ -260,11 +260,22 @@ html_elements += f"""
         claimBtn.disabled = true;
         claimBtn.innerText = "Saving...";
         
-        const curUrl = new URL(window.parent.location.href);
-        curUrl.searchParams.set("mined_item", selectedItem);
-        window.parent.location.href = curUrl.toString();
+        // Push selectedItem data to hidden Streamlit container parent text input securely
+        window.parent.postMessage({
+            type: 'streamlit:set_widget_value',
+            widget_id: 'hidden_claim_input',
+            value: selectedItem
+        }, '*');
     }}
 </script>
 """
 
+# Render custom HTML components layout framework
 st.components.v1.html(html_elements, height=770, scrolling=False)
+
+# This hidden input captures the javascript callback value securely and routes it to the script pipeline
+st.text_input("Claim Event Listener", key="hidden_claim_item", label_visibility="collapsed")
+st.markdown(
+    "<style>div[data-testid='stTextInput'] {display:none !important;}</style>", 
+    unsafe_allow_html=True
+)
