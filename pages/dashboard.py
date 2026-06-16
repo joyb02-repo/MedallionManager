@@ -1,6 +1,6 @@
 # ====================================================================
 # PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
-# FILE: pages/dashboard.py (COMPLETE MONOLITH - ATTRIBUTE ERROR FIXED)
+# FILE: pages/dashboard.py (COMPLETE MONOLITH - TOTAL STABILITY FIX)
 # ====================================================================
 
 import streamlit as st
@@ -118,20 +118,9 @@ if not data or data.get("status") != "success":
     st.error("Data Matrix Synchronization Failure. Verify session state architecture configuration tokens.")
     st.stop()
 
-# Process active structural objects/lists safely
+# Grab raw medallions structural payload block
 medallions_raw = data.get("medallions", {})
 totals = data.get("totals", {"total_collected": 0, "total_value": 0})
-
-# SAFE CONVERSION matrix handling: If API provides an ordered list instead of a map dictionary
-medallions = {}
-if isinstance(medallions_raw, list):
-    for item in medallions_raw:
-        if isinstance(item, dict) and "id" in item:
-            medallions[item["id"]] = item
-        elif isinstance(item, dict) and "key" in item:
-            medallions[item["key"]] = item
-else:
-    medallions = medallions_raw
 
 # Ordered array tracking matching inventory rendering maps
 medallion_order = ["SPRC", "PINE", "MRNT", "BALS", "OAKW", "MAPL", "WALN", "CHER", "MHGN", "EBNY", "RSWD", "AGAR"]
@@ -140,9 +129,19 @@ medallion_order = ["SPRC", "PINE", "MRNT", "BALS", "OAKW", "MAPL", "WALN", "CHER
 cols = st.columns(12)
 for idx, key in enumerate(medallion_order):
     with cols[idx]:
-        m_info = medallions.get(key, {"count": 0, "image": "", "label": key, "unlocked": False})
+        # UNIVERSAL LOOKUP HACK: Safely handle data extraction whether payload is a list or a dictionary map
+        m_info = None
+        if isinstance(medallions_raw, list):
+            m_info = next((item for item in medallions_raw if isinstance(item, dict) and any(item.get(k) == key for k in ["id", "key", "label", "code"])), None)
+        elif isinstance(medallions_raw, dict):
+            m_info = medallions_raw.get(key)
+            
+        # Fallback to default structural object properties if data search yielded nothing
+        if not m_info:
+            m_info = {"count": 0, "image": "", "label": key, "unlocked": False}
         
-        if m_info.get("unlocked") and m_info.get("count", 0) > 0:
+        # Display rendering layout pipeline configurations
+        if m_info.get("unlocked") or m_info.get("count", 0) > 0:
             st.markdown(f"""
                 <div style="text-align: center; margin-bottom: 20px;">
                     <img src="{m_info.get('image', '')}" style="width: 100%; max-width: 65px; height: auto; margin-bottom: 8px;" />
