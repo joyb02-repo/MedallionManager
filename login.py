@@ -1,6 +1,6 @@
 # ====================================================================
 # PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
-# FILE: login.py (COMPACT NO-SCROLL DESIGN)
+# FILE: login.py (DYNAMIC CENTERED CANVAS - NO TOP GAP)
 # ====================================================================
 
 import streamlit as st
@@ -41,11 +41,11 @@ def get_http_session():
     session.mount("http://", adapter)
     return session
 
-# Global UI Style Framework - Aggressively shrunken parameters to prevent overflow scrolling
+# Global UI Style Framework - Destroys the hardcoded top gap and balances spacing dynamically
 st.markdown("""
 <style>
-    /* Force absolute layout limits on the app framework to completely stop scrolling */
-    html, body, .stApp, [data-testid="stMain"], [data-testid="stMainContainer"], .main, .block-container {
+    /* Wipe out Streamlit's structural layout spacing and force dead-center containment */
+    html, body, .stApp, [data-testid="stMain"], [data-testid="stMainContainer"], .main, .block-container, [data-testid="stMainZone"] {
         margin: 0 !important;
         padding: 0 !important;
         height: 100dvh !important;
@@ -81,16 +81,16 @@ st.markdown("""
         align-items: center !important;
     }
     
-    /* Highly Compact Core Login Card Frame - Fits entirely inside strict screen limits */
+    /* The Central Core Login Card Frame - Fits entirely inside strict screen limits without a static top gap */
     div[data-testid="stVerticalBlock"]:has(div.login-card-anchor) {
         background: #161925 !important;
         border: 1px solid #23273A !important;
         border-radius: 12px !important;
-        padding: min(3.5vh, 28px) min(5vw, 35px) !important; /* Shrunken vertical internal paddings */
-        max-width: 400px !important; /* Made the card width sleeker */
+        padding: min(4vh, 32px) min(5vw, 35px) !important; 
+        max-width: 400px !important; 
         width: min(400px, 88vw) !important;
         max-height: 90vh !important; 
-        margin: auto !important; 
+        margin: auto !important; /* Dynamically balances top and bottom gaps according to screen size */
         box-shadow: 0 20px 45px rgba(0,0,0,0.5) !important;
         text-align: center !important;
         box-sizing: border-box !important;
@@ -100,14 +100,14 @@ st.markdown("""
         justify-content: center !important;
     }
     
-    /* Scaled down spaces and elements */
-    .login-logo-container { width: 100%; text-align: center; margin-bottom: min(2vh, 15px); display: flex; justify-content: center; }
-    .login-logo-container img { height: min(11vh, 90px); width: auto; object-fit: contain; } /* Shrunk logo image max heights */
+    /* Responsive Logo Sizing */
+    .login-logo-container { width: 100%; text-align: center; margin-bottom: min(2.5vh, 20px); display: flex; justify-content: center; }
+    .login-logo-container img { height: min(12vh, 100px); width: auto; object-fit: contain; }
     
-    .custom-login-header { font-size: min(4.8vw, 19px); font-weight: 600; color: #FFFFFF; margin-bottom: min(1vh, 6px); width: 100%; text-align: center !important; letter-spacing: 0.5px; font-family: 'Inter', sans-serif; }
-    .custom-login-sub { font-size: min(3.2vw, 12px); color: rgba(255, 255, 255, 0.4); margin-bottom: min(2.5vh, 18px); width: 100%; text-align: center !important; line-height: 1.4; font-family: 'Inter', sans-serif; }
+    .custom-login-header { font-size: min(5vw, 20px); font-weight: 600; color: #FFFFFF; margin-bottom: min(1vh, 8px); width: 100%; text-align: center !important; letter-spacing: 0.5px; font-family: 'Inter', sans-serif; }
+    .custom-login-sub { font-size: min(3.5vw, 12px); color: rgba(255, 255, 255, 0.4); margin-bottom: min(3vh, 22px); width: 100%; text-align: center !important; line-height: 1.4; font-family: 'Inter', sans-serif; }
     
-    /* Compact Passcode Interface Area */
+    /* Center Aligned Passcode Layout Elements */
     div.stTextInput { width: min(150px, 40vw) !important; margin: 0 auto min(0.5vh, 4px) auto !important; }
     
     div[data-testid="stTextInput"] div[data-component="stTextInputRootElement"] {
@@ -146,10 +146,10 @@ st.markdown("""
         padding: 0px !important; 
     }
     
-    /* Compact Submit Action Button */
+    /* Golden Action Button Styling */
     div.stButton {
         width: 100% !important;
-        margin: min(2vh, 16px) 0 0 0 !important;
+        margin: min(2.5vh, 20px) 0 0 0 !important;
         padding: 0 !important;
         display: flex !important;
         justify-content: center !important;
@@ -157,7 +157,7 @@ st.markdown("""
     
     div.stButton > button {
         width: 100% !important; 
-        height: min(6vh, 44px) !important; 
+        height: min(6vh, 46px) !important; 
         background-color: #F4D068 !important; 
         border: none !important; 
         border-radius: 8px !important;
