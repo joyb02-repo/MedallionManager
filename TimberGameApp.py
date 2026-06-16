@@ -138,9 +138,13 @@ html_base_template = """
     
     /* Security Verification Console Layer Styles */
     .action-container { display: flex; flex-direction: column; align-items: center; margin-top: 25px; width: 100%; }
-    .pin-auth-wrapper { display: flex; gap: 8px; margin-bottom: 12px; width: 424px; box-sizing: border-box; }
-    .pin-input { flex: 1; height: 38px; background: #161925; border: 1px solid #23273A; border-radius: 6px; color: #FFF; text-align: center; font-size: 14px; font-weight: 600; letter-spacing: 2px; outline: none; box-sizing: border-box; }
+    .pin-auth-wrapper { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; width: 100%; box-sizing: border-box; }
+    
+    /* Tightened size perfectly optimized to scale down layout for 6 numbers */
+    .pin-input { width: 150px; height: 38px; background: #161925; border: 1px solid #23273A; border-radius: 6px; color: #FFF; text-align: center; font-size: 14px; font-weight: 600; letter-spacing: 2px; outline: none; box-sizing: border-box; }
+    .pin-input::placeholder { font-size: 11px; letter-spacing: 0.5px; color: #4A5568; }
     .pin-input:focus { border-color: #3D4563; }
+    
     .pin-verify-btn { padding: 0 16px; height: 38px; background: #23273A; border: none; border-radius: 6px; color: #E2E8F0; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; box-sizing: border-box; transition: background 0.15s; }
     .pin-verify-btn:hover { background: #2F354E; }
     .pin-feedback-msg { font-size: 11px; font-weight: 600; margin-bottom: 10px; height: 14px; text-align: center; }
@@ -180,7 +184,7 @@ __GRID_ITEMS_PLACEHOLDER__
 
 <div class="action-container">
     <div class="pin-auth-wrapper" id="pinSection">
-        <input class="pin-input" type="text" id="pinField" placeholder="ENTER 6-DIGIT PIN" maxlength="6" />
+        <input class="pin-input" type="text" id="pinField" placeholder="6-DIGIT PIN" maxlength="6" />
         <button class="pin-verify-btn" id="verifyBtn" onclick="evaluatePinAuthorization()">Verify PIN</button>
     </div>
     <div class="pin-feedback-msg" id="feedbackMsg" style="color: #718096;"></div>
@@ -230,7 +234,7 @@ __GRID_ITEMS_PLACEHOLDER__
                 feedback.innerText = "Access granted! Mining console unlocked.";
                 document.getElementById("pinField").disabled = true;
                 verifyBtn.style.display = "none";
-                mineBtn.disabled = false; // Ignite console gate
+                mineBtn.disabled = false; 
             } else {
                 feedback.style.color = "#ef4444";
                 feedback.innerText = result.message || "Invalid security code.";
