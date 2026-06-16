@@ -10,14 +10,6 @@ import base64
 
 API_URL = st.secrets["API_URL"]
 
-# Check for global logouts requested via clean URL parameter redirection strings
-if "logout" in st.query_params:
-    st.query_params.clear()
-    st.session_state["authenticated"] = False
-    st.session_state["user_passcode"] = ""
-    st.session_state["username"] = "Guest"
-    st.rerun()
-
 # Initialize session structures
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
@@ -64,17 +56,38 @@ st.markdown("""
 # ====================================================================
 if not st.session_state["authenticated"]:
     
-    # Catch backend routing requests passed up seamlessly from the gorgeous interface card below
-    query_params = st.query_params
-    if "try_passcode" in query_params:
-        submitted_pass = query_params["try_passcode"]
-        st.query_params.clear() # immediately sanitize the navigation bar
-        
-        # Fast, secure direct background pipeline authorization check
+    # ----------------------------------------------------------------
+    # BULLETPROOF INTERCEPT ENGINE: JavaScript postMessage Receiver
+    # ----------------------------------------------------------------
+    # Instantly listens for background login/logout data signals emitted from HTML context
+    # and processes them in Python immediately without browser address bar redirects.
+    
+    import streamlit.components.v1 as components
+    
+    # Tiny, transparent receiver engine hidden in background
+    st.markdown("""
+        <script>
+            window.addEventListener('message', function(event) {
+                if (event.data && event.data.type === 'EXEC_AUTH') {
+                    const inputs = window.parent.document.querySelectorAll('input[aria-label="auth_bridge"]');
+                    if (inputs.length > 0) {
+                        inputs[0].value = event.data.value;
+                        inputs[0].dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }
+            });
+        </script>
+    """, unsafe_allow_html=True)
+
+    # Hidden text engine value channel link 
+    auth_bridge = st.text_input("auth_bridge", label_visibility="collapsed", key="auth_bridge_receiver")
+    
+    if auth_bridge:
+        # Fast, secure direct pipeline authorization check against Google Apps Script backend
         try:
-            chk = requests.get(API_URL, params={"action": "fetchData", "passcode": submitted_pass}, timeout=12)
+            chk = requests.get(API_URL, params={"action": "fetchData", "passcode": auth_bridge}, timeout=12)
             if chk.status_code == 200 and chk.json().get("status") == "success":
-                st.session_state["user_passcode"] = submitted_pass
+                st.session_state["user_passcode"] = auth_bridge
                 st.session_state["username"] = chk.json().get("username", "User")
                 st.session_state["authenticated"] = True
                 st.rerun()
@@ -83,7 +96,7 @@ if not st.session_state["authenticated"]:
         except Exception as e:
             st.sidebar.error("System Matrix Timeout. Try again.")
 
-    # High-fidelity CSS UI Template layout engine for a gorgeous access card
+    # High-fidelity CSS UI Template card layout engine 
     html_login_card = """
     <style>
         body {
@@ -121,7 +134,9 @@ if not st.session_state["authenticated"]:
             const btn = document.getElementById("subBtn");
             if(val.length < 4) { alertBox.innerText = "Please complete passcode entry."; return; }
             btn.disabled = true; btn.innerText = "AUTHENTICATING..."; alertBox.innerText = "";
-            window.parent.location.search = "?try_passcode=" + encodeURIComponent(val);
+            
+            // Safe message tunnel directly bypasses browser URL navigation completely
+            window.parent.postMessage({ type: 'EXEC_AUTH', value: val }, '*');
         }
     </script>
     """
@@ -131,6 +146,28 @@ if not st.session_state["authenticated"]:
 # ARCHITECTURE SPLIT - INTERACTION PANEL B: VERIFIED MASTER ECOSYSTEM
 # ====================================================================
 else:
+    # Handle clean logouts requested inside the main grid environment view
+    st.markdown("""
+        <script>
+            window.addEventListener('message', function(event) {
+                if (event.data && event.data.type === 'EXEC_LOGOUT') {
+                    const inputs = window.parent.document.querySelectorAll('input[aria-label="logout_bridge"]');
+                    if (inputs.length > 0) {
+                        inputs[0].value = 'DISCONNECT';
+                        inputs[0].dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }
+            });
+        </script>
+    """, unsafe_allow_html=True)
+    
+    logout_bridge = st.text_input("logout_bridge", label_visibility="collapsed", key="logout_bridge_receiver")
+    if logout_bridge == "DISCONNECT":
+        st.session_state["authenticated"] = False
+        st.session_state["user_passcode"] = ""
+        st.session_state["username"] = "Guest"
+        st.rerun()
+
     @st.cache_data(ttl=1)
     def fetch_all_sheet_data(passcode):
         try:
@@ -165,7 +202,6 @@ else:
             position: relative;
         }
         
-        /* Fixed Absolute Corner Logout Node Placement */
         .logout-corner-node {
             position: absolute; top: 22px; right: 25px;
             background: rgba(22, 25, 37, 0.85); border: 1px solid #23273A;
@@ -277,8 +313,7 @@ else:
         let selectedItem = "";
 
         function triggerSystemDisconnect() {
-            // Signal global application structure logout pipeline
-            window.parent.location.search = "?logout=true";
+            window.parent.postMessage({ type: 'EXEC_LOGOUT' }, '*');
         }
 
         function evaluatePinAuthorization() {
