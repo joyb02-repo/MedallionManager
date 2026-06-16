@@ -37,7 +37,7 @@ def get_image_base64(path):
             return base64.b64encode(image_file.read()).decode()
     return None
 
-# Inject Global Background Gridded Theme Stylesheet so it covers BOTH login and app screens uniformly
+# Inject Global Cyberpunk Theme Stylesheet 
 st.markdown("""
 <style>
     .stApp {
@@ -46,8 +46,8 @@ st.markdown("""
                           linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
         background-size: 24px 24px;
     }
-    /* Hide default Streamlit visual headers to keep the custom theme pristine */
     header, [data-testid="stHeader"] { visibility: hidden; height: 0px; }
+    div[data-testid="stBlock"] { padding: 0rem !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -55,91 +55,70 @@ st.markdown("""
 # ARCHITECTURE SPLIT - INTERACTION PANEL A: GATEWAY LOGIN CONSOLE
 # ====================================================================
 if not st.session_state["authenticated"]:
-    # Custom CSS styled Container Row to align the login console card perfectly center
-    st.markdown("""
+    
+    # Catch backend routing requests passed up seamlessly from the gorgeous interface card below
+    query_params = st.query_params
+    if "try_passcode" in query_params:
+        submitted_pass = query_params["try_passcode"]
+        st.query_params.clear() # immediately sanitize the navigation bar
+        
+        # Fast, secure direct background pipeline authorization check
+        try:
+            chk = requests.get(API_URL, params={"action": "fetchData", "passcode": submitted_pass}, timeout=12)
+            if chk.status_code == 200 and chk.json().get("status") == "success":
+                st.session_state["user_passcode"] = submitted_pass
+                st.session_state["username"] = chk.json().get("username", "User")
+                st.session_state["authenticated"] = True
+                st.rerun()
+            else:
+                st.sidebar.error("Authentication Error: Passcode signature validation rejected.")
+        except Exception as e:
+            st.sidebar.error("System Matrix Timeout. Try again.")
+
+    # High-fidelity CSS UI Template layout engine for a gorgeous access card
+    html_login_card = """
     <style>
-        .login-wrapper {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding-top: 10vh;
-            width: 100%;
+        body {
+            margin: 0; padding: 0; background: transparent;
+            font-family: 'Inter', system-ui, sans-serif;
+            display: flex; align-items: center; justify-content: center; height: 85vh; overflow: hidden;
         }
         .login-card {
-            background: #161925; 
-            border: 1px solid #23273A; 
-            border-radius: 12px;
-            padding: 40px; 
-            width: 360px; 
-            text-align: center;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            background: #161925; border: 1px solid #23273A; border-radius: 12px;
+            padding: 45px 40px; width: 350px; text-align: center;
+            box-shadow: 0 20px 45px rgba(0,0,0,0.5);
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .login-title { font-size: 20px; font-weight: 600; color: #FFFFFF; margin-bottom: 8px; letter-spacing: 0.5px; font-family: 'Inter', sans-serif; }
-        .login-subtitle { font-size: 12px; color: rgba(255, 255, 255, 0.3); margin-bottom: 24px; line-height: 1.4; font-family: 'Inter', sans-serif; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .login-title { font-size: 22px; font-weight: 600; color: #FFFFFF; margin-bottom: 8px; letter-spacing: 0.5px; }
+        .login-subtitle { font-size: 12px; color: rgba(255, 255, 255, 0.35); margin-bottom: 32px; line-height: 1.5; }
+        .login-input { width: 100%; height: 46px; background: #0E1117; border: 1px solid #23273A; border-radius: 6px; color: #FFF; text-align: center; font-size: 18px; font-weight: 700; letter-spacing: 6px; outline: none; margin-bottom: 20px; box-sizing: border-box; transition: all 0.15s ease-in-out; }
+        .login-input:focus { border-color: #3D4563; box-shadow: 0 0 0 3px rgba(61, 69, 99, 0.2); }
+        .login-btn { width: 100%; height: 46px; background-color: #F4D068; border: none; border-radius: 6px; color: #0E1117; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 4px 15px rgba(244, 208, 104, 0.15); }
+        .login-btn:hover { transform: scale(1.015); background-color: #f7d983; }
+        .login-btn:active { transform: scale(0.99); }
+        .err-msg { font-size: 11px; font-weight: 600; color: #ef4444; margin-top: 15px; height: 14px; }
     </style>
-    """, unsafe_allow_html=True)
-    
-    # Render UI Structure
-    st.markdown('<div class="login-wrapper"><div class="login-card">', unsafe_allow_html=True)
-    st.markdown('<div class="login-title">Portfolio System Access</div>', unsafe_allow_html=True)
-    st.markdown('<div class="login-subtitle">Enter your 4-digit master passcode key to authenticate transaction nodes.</div>', unsafe_allow_html=True)
-    
-    # Native Streamlit Form to manage clean state actions
-    with st.form("login_form", clear_on_submit=False):
-        passcode_input = st.text_input(
-            label="Passcode Input Gate",
-            value="",
-            max_chars=4,
-            type="password",
-            placeholder="••••",
-            label_visibility="collapsed"
-        )
-        
-        # Override native form submit button cosmetics to perfectly match our theme
-        st.markdown("""
-        <style>
-            div[data-testid="stForm"] { border: none !important; padding: 0 !important; }
-            button[kind="primaryFormSubmit"] {
-                width: 100% !important; height: 44px !important; background-color: #F4D068 !important; 
-                border: none !important; border-radius: 6px !important; color: #0E1117 !important; 
-                font-size: 13px !important; font-weight: 700 !important; text-transform: uppercase !important; 
-                letter-spacing: 1px !important; cursor: pointer !important; margin-top: 10px !important;
-            }
-            button[kind="primaryFormSubmit"]:hover { transform: scale(1.02); }
-            input[type="password"] {
-                background-color: #0E1117 !important; border: 1px solid #23273A !important; 
-                color: #FFF !important; text-align: center !important; font-size: 20px !important; 
-                font-weight: 700 !important; letter-spacing: 8px !important; height: 44px !important;
-            }
-        </style>
-        """, unsafe_allow_html=True)
-        
-        submit_login = st.form_submit_button("Verify Passcode")
-        
-        if submit_login:
-            clean_pass = passcode_input.strip()
-            if len(clean_pass) < 4:
-                st.error("Please complete passcode matrix entry.")
-            else:
-                with st.spinner("Authenticating transaction node..."):
-                    try:
-                        # Direct Server-to-Server network communication (No CORS limitations!)
-                        chk = requests.get(API_URL, params={"action": "fetchData", "passcode": clean_pass}, timeout=12)
-                        if chk.status_code == 200:
-                            res_data = chk.json()
-                            if res_data.get("status") == "success":
-                                st.session_state["user_passcode"] = clean_pass
-                                st.session_state["username"] = res_data.get("username", "User")
-                                st.session_state["authenticated"] = True
-                                st.rerun()
-                            else:
-                                st.error(res_data.get("message", "Invalid passcode credentials."))
-                        else:
-                            st.error(f"Sheet returned error status: {chk.status_code}")
-                    except Exception as err:
-                        st.error(f"Network handshake failed: {str(err)}")
-                        
-    st.markdown('</div></div>', unsafe_allow_html=True)
+    <div class="login-card">
+        <div class="login-title">Portfolio System Access</div>
+        <div class="login-subtitle font-family: 'Inter'">Enter your 4-digit master passcode key to authenticate transaction nodes.</div>
+        <input class="login-input" type="password" id="passCodeField" placeholder="••••" maxlength="4" onkeydown="if(event.key==='Enter') transmitAuthRequest()" />
+        <button class="login-btn" id="subBtn" onclick="transmitAuthRequest()">Verify Passcode</button>
+        <div class="err-msg" id="alertBox"></div>
+    </div>
+    <script>
+        function transmitAuthRequest() {
+            const val = document.getElementById("passCodeField").value.trim();
+            const alertBox = document.getElementById("alertBox");
+            const btn = document.getElementById("subBtn");
+            if(val.length < 4) { alertBox.innerText = "Please complete passcode entry."; return; }
+            btn.disabled = true; btn.innerText = "AUTHENTICATING..."; alertBox.innerText = "";
+            // Pipe query keys directly up through the parent instance architecture seamlessly
+            window.parent.location.search = "?try_passcode=" + encodeURIComponent(val);
+        }
+    </script>
+    """
+    st.components.v1.html(html_login_card, height=650, scrolling=False)
 
 # ====================================================================
 # ARCHITECTURE SPLIT - INTERACTION PANEL B: VERIFIED MASTER ECOSYSTEM
