@@ -77,18 +77,18 @@ for wood in MEDALLION_COLUMNS:
 asset_map_js += "}"
 
 # ====================================================================
-# HTML/CSS RENDER CONTEXT
+# HTML/CSS RENDER CONTEXT (Optimized spacing for tighter layout)
 # ====================================================================
 html_base_template = """
 <style>
     body {
-        margin: 0; padding: 50px 0 0 0; background-color: #0E1117;
+        margin: 0; padding: 10px 0 0 0; background-color: #0E1117;
         background-image: linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
                           linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
         background-size: 24px 24px; font-family: 'Inter', system-ui, sans-serif;
     }
-    .portfolio-title { text-align: center; font-size: 24px; font-weight: 600; color: #FFFFFF; margin-bottom: 12px; }
-    .portfolio-intro { text-align: center; max-width: 800px; margin: 0 auto 50px auto; font-size: 13px; line-height: 1.6; color: rgba(255, 255, 255, 0.25); }
+    .portfolio-title { text-align: center; font-size: 24px; font-weight: 600; color: #FFFFFF; margin-bottom: 8px; }
+    .portfolio-intro { text-align: center; max-width: 800px; margin: 0 auto 20px auto; font-size: 13px; line-height: 1.6; color: rgba(255, 255, 255, 0.25); }
     .portfolio-intro span { color: rgba(244, 208, 104, 0.4); font-weight: 600; }
     .casement-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; padding: 0 15px; }
     .grid-node { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
@@ -109,17 +109,17 @@ html_base_template = """
     .tip-line span.rarity-rare { color: #3b82f6; }         
     .tip-line span.rarity-epic { color: #a855f7; }         
     .tip-line span.rarity-legendary { color: #f59e0b; }    
-    .dashboard-row { display: flex; justify-content: center; gap: 20px; margin-top: 45px; padding: 0 15px; }
+    .dashboard-row { display: flex; justify-content: center; gap: 20px; margin-top: 30px; padding: 0 15px; }
     .stat-card { background: #161925; border: 1px solid #23273A; border-radius: 6px; padding: 10px 20px; min-width: 180px; text-align: center; }
     .stat-label { font-size: 11px; text-transform: uppercase; color: #718096; letter-spacing: 0.75px; margin-bottom: 4px; }
     .stat-value { font-size: 18px; font-weight: 700; color: #FFF; }
     
-    .action-container { display: flex; flex-direction: column; align-items: center; margin-top: 30px; width: 100%; }
+    .action-container { display: flex; flex-direction: column; align-items: center; margin-top: 25px; width: 100%; }
     .mine-button { width: 424px; height: 46px; background-color: #F4D068; border: none; border-radius: 6px; color: #0E1117; font-size: 14px; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 4px 15px rgba(244, 208, 104, 0.2); }
     .mine-button:hover { transform: scale(1.05); }
     .mine-button:disabled { opacity: 0.6; cursor: not-allowed; transform: scale(1) !important; background-color: #23273A !important; color: #718096 !important; }
     
-    .animation-display { margin-top: 25px; height: 240px; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+    .animation-display { margin-top: 20px; height: 240px; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
     .spin-box { width: 140px; height: 140px; min-height: 140px; border-radius: 12px; background: #161925; border: 3px solid #23273A; display: none; align-items: center; justify-content: center; box-sizing: border-box; }
     .spin-box img { width: 88%; height: 88%; object-fit: contain; }
     .outcome-text-wrapper { margin-top: 15px; height: 35px; text-align: center; opacity: 0; transition: opacity 0.2s ease-in-out; }
@@ -247,17 +247,11 @@ for wood_name in MEDALLION_COLUMNS:
         
         if value != "N/A" and not str(value).strip().startswith("$"): value = f"${str(value).strip()}"
         
-        # ====================================================================
-        # FIXED PROBABILITY FORMATTING
-        # ====================================================================
         prob_str = str(raw_probability).replace("%", "").strip()
         try:
             prob_val = float(prob_str)
-            # If Google Sheets API returns raw fractional decimals like 0.151 instead of 15.1
             if prob_val > 0 and prob_val < 1.0:
                 prob_val = prob_val * 100
-            
-            # Format cleanly removing trailing zero artifacts
             probability = f"{prob_val:g}%"
         except ValueError:
             probability = f"{prob_str}%" if prob_str else "N/A"
@@ -291,4 +285,5 @@ html_elements = html_elements.replace("__COLLECTED_PLACEHOLDER__", summary_colle
 html_elements = html_elements.replace("__ASSET_MAP_PLACEHOLDER__", asset_map_js)
 html_elements = html_elements.replace("__USERNAME_PLACEHOLDER__", st.session_state["username"])
 
-st.components.v1.html(html_elements, height=770, scrolling=False)
+# Adjusted height to 730 to cleanly contain the pulled-up assets
+st.components.v1.html(html_elements, height=730, scrolling=False)
