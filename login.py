@@ -1,6 +1,6 @@
 # ====================================================================
 # PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
-# FILE: login.py (CLEAN MINIMAL CARD DESIGN - SPECIFIED PARAMETERS)
+# FILE: login.py (CLEAN REVERTED DESIGN - OUTER CONTAINER REMOVED)
 # ====================================================================
 
 import streamlit as st
@@ -41,7 +41,7 @@ def get_http_session():
     session.mount("http://", adapter)
     return session
 
-# Global UI Style Framework - Implements precise box constraints and layout cleanups
+# Global UI Style Framework - Strips out the background wrapper and maps the button cleanly
 st.markdown("""
 <style>
     .stApp {
@@ -52,14 +52,22 @@ st.markdown("""
     }
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; height: 0px; }
     
-    /* Perfect Center Column Card: Custom background token with full-width layout normalization */
+    /* REMOVE THE MASSIVE OUTER DIALOGUE BACKGROUND CONTAINER */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+    
+    /* Target the central login block frame directly to position neatly */
     div[data-testid="stVerticalBlock"]:has(div.login-card-anchor) {
         background: #161925 !important;
         border: 1px solid #23273A !important;
         border-radius: 12px !important;
         padding: 40px 45px !important;
-        width: 100% !important;
         max-width: 440px !important;
+        width: 440px !important;
         margin: 60px auto 0 auto !important;
         box-shadow: 0 20px 45px rgba(0,0,0,0.5) !important;
         text-align: center !important;
@@ -69,14 +77,14 @@ st.markdown("""
         align-items: center !important;
     }
     
-    /* Logo adjustments */
+    /* Massive Logo Container Framework */
     .login-logo-container { width: 100%; text-align: center; margin-bottom: 25px; display: flex; justify-content: center; }
     .login-logo-container img { max-height: 140px; width: auto; object-fit: contain; }
     
     .custom-login-header { font-size: 22px; font-weight: 600; color: #FFFFFF; margin-bottom: 10px; width: 100%; text-align: center !important; letter-spacing: 0.5px; font-family: 'Inter', sans-serif; }
     .custom-login-sub { font-size: 13px; color: rgba(255, 255, 255, 0.4); margin-bottom: 30px; width: 100%; text-align: center !important; line-height: 1.5; font-family: 'Inter', sans-serif; }
     
-    /* Sized perfectly down for 4 digits flat */
+    /* Sized perfectly for 4 digits text string length entries */
     div.stTextInput { width: 160px !important; margin: 0 auto 5px auto !important; }
     div.stTextInput input {
         background-color: #0E1117 !important; border: 1px solid #23273A !important; border-radius: 6px !important;
@@ -84,8 +92,8 @@ st.markdown("""
         letter-spacing: 6px !important; height: 46px !important; box-sizing: border-box !important;
     }
     
-    /* REMOVE THE 'PRESS ENTER TO SUBMIT FORM' PROMPT AND STREAMLIT TRAILING CAPTIONS */
-    div.stTextInput p, [data-testid="stWidgetInstructions"], .st-emotion-cache-164784e { 
+    /* Completely hide Streamlit instructions & 'Press ENTER to submit' guidance text lines */
+    div.stTextInput p, [data-testid="stWidgetInstructions"] { 
         display: none !important; 
         visibility: hidden !important; 
         height: 0px !important; 
@@ -93,7 +101,7 @@ st.markdown("""
         padding: 0px !important; 
     }
     
-    /* Stretch the golden button cleanly to match the base box width */
+    /* Stretch the golden action button beautifully across the login template container card width */
     div.stButton {
         width: 100% !important;
         margin: 25px 0 0 0 !important;
@@ -121,7 +129,7 @@ st.markdown("""
         transition: all 0.2s ease-in-out !important;
     }
     
-    /* Interactive Hover Transitions */
+    /* High Fidelity Interactive Hover Parameters */
     div.stButton > button:hover {
         background-color: #f5d77f !important;
         color: #0E1117 !important;
@@ -141,41 +149,38 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(244, 208, 104, 0.1) !important;
     }
     
-    /* Alert and indicator styling overrides */
+    /* Adjust error system notifications layouts */
     div[data-testid="stAlert"] { margin-top: 15px !important; width: 100% !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# Build out proportional outer column spacers to float the layout into the dead center
-left_spacer, center_target, right_spacer = st.columns([1.1, 1, 1.1])
+# Build anchor flag mapping target
+st.markdown('<div class="login-card-anchor"></div>', unsafe_allow_html=True)
 
-with center_target:
-    st.markdown('<div class="login-card-anchor"></div>', unsafe_allow_html=True)
+if logo_b64:
+    st.markdown(f'<div class="login-logo-container"><img src="data:image/png;base64,{logo_b64}" /></div>', unsafe_allow_html=True)
 
-    if logo_b64:
-        st.markdown(f'<div class="login-logo-container"><img src="data:image/png;base64,{logo_b64}" /></div>', unsafe_allow_html=True)
+st.markdown('<div class="custom-login-header">Portfolio System Access</div>', unsafe_allow_html=True)
+st.markdown('<div class="custom-login-sub">Enter your 4-digit master passcode key to authenticate transaction nodes.</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="custom-login-header">Portfolio System Access</div>', unsafe_allow_html=True)
-    st.markdown('<div class="custom-login-sub">Enter your 4-digit master passcode key to authenticate transaction nodes.</div>', unsafe_allow_html=True)
+input_passcode = st.text_input("Passcode", type="password", label_visibility="collapsed", max_chars=4)
+submit_btn = st.button("Verify Passcode")
 
-    input_passcode = st.text_input("Passcode", type="password", label_visibility="collapsed", max_chars=4)
-    submit_btn = st.button("Verify Passcode")
-
-    if submit_btn:
-        if len(input_passcode) < 4:
-            st.error("Please complete passcode entry.")
-        else:
-            with st.spinner("AUTHENTICATING..."):
-                try:
-                    http_client = get_http_session()
-                    chk = http_client.get(API_URL, params={"action": "fetchData", "passcode": input_passcode}, timeout=15)
-                    
-                    if chk.status_code == 200 and chk.json().get("status") == "success":
-                        st.session_state["user_passcode"] = input_passcode
-                        st.session_state["username"] = chk.json().get("username", "User")
-                        st.session_state["authenticated"] = True
-                        st.switch_page("pages/dashboard.py")
-                    else:
-                        st.error("Access Denied: Passcode signature validation rejected.")
-                except Exception as e:
-                    st.error("System Matrix Timeout. Please check your network connection.")
+if submit_btn:
+    if len(input_passcode) < 4:
+        st.error("Please complete passcode entry.")
+    else:
+        with st.spinner("AUTHENTICATING..."):
+            try:
+                http_client = get_http_session()
+                chk = http_client.get(API_URL, params={"action": "fetchData", "passcode": input_passcode}, timeout=15)
+                
+                if chk.status_code == 200 and chk.json().get("status") == "success":
+                    st.session_state["user_passcode"] = input_passcode
+                    st.session_state["username"] = chk.json().get("username", "User")
+                    st.session_state["authenticated"] = True
+                    st.switch_page("pages/dashboard.py")
+                else:
+                    st.error("Access Denied: Passcode signature validation rejected.")
+            except Exception as e:
+                st.error("System Matrix Timeout. Please check your network connection.")
