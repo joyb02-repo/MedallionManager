@@ -39,11 +39,18 @@ st.markdown("""
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; height: 0px; }
     div.block-container { padding-top: 20px !important; padding-bottom: 10px !important; max-width: 100% !important; }
     
-    div.element-container:has(button[key="sys_refresh_btn"]),
-    div.element-container:has(button[key="sys_route_store_btn"]) {
+    /* Global ironclad rule: Nuke anything containing or matching these system keys */
+    [data-testid="stElementContainer"]:has(button[key*="sys_"]),
+    div.element-container:has(button[key*="sys_"]),
+    button[key="sys_refresh_btn"],
+    button[key="sys_route_store_btn"] {
         display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
         height: 0px !important;
+        width: 0px !important;
         position: absolute !important;
+        pointer-events: none !important;
     }
 </style>
 """, unsafe_allow_html=True)
