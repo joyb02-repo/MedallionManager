@@ -51,44 +51,61 @@ st.markdown("""
     }
     header, [data-testid="stHeader"] { visibility: hidden; height: 0px; }
     
-    /* Styling the Native Form to look like a premium card */
+    /* Center and position the card layout box wrapper cleanly */
     div[data-testid="stForm"] {
         background: #161925 !important;
         border: 1px solid #23273A !important;
         border-radius: 12px !important;
         padding: 45px 40px !important;
-        max-width: 400px !important;
-        margin: 80px auto 0 auto !important;
+        max-width: 420px !important;
+        margin: 100px auto 0 auto !important;
         box-shadow: 0 20px 45px rgba(0,0,0,0.5) !important;
-        text-align: center !important;
     }
     
+    /* Clean text layout classes */
     .custom-login-header {
-        font-size: 22px; font-weight: 600; color: #FFFFFF; margin-bottom: 8px; letter-spacing: 0.5px;
+        font-size: 24px; font-weight: 600; color: #FFFFFF; margin-bottom: 12px; letter-spacing: 0.5px; font-family: 'Inter', sans-serif; text-align: left;
     }
     .custom-login-sub {
-        font-size: 12px; color: rgba(255, 255, 255, 0.35); margin-bottom: 25px; line-height: 1.5;
+        font-size: 13px; color: rgba(255, 255, 255, 0.35); margin-bottom: 30px; line-height: 1.5; font-family: 'Inter', sans-serif; text-align: left;
     }
     
-    /* Input Field Redesign */
-    div[data-testid="stForm"] input {
-        background: #0E1117 !important;
-        border: 1px solid #23273A !important;
+    /* Normalize block layout wrapper items from breaking or wrapping cards */
+    div[data-testid="stForm"] div[data-testid="element-container"],
+    div[data-testid="stForm"] div[data-testid="stWidgetLabel"] {
+        display: block !important;
+        width: 100% !important;
+    }
+    
+    /* Form Password Field Text Input Layout Box Override */
+    div[data-testid="stForm"] div[data-testid="stTextInput"] {
+        width: 100% !important;
+        margin-bottom: 18px !important;
+    }
+    div[data-testid="stForm"] input[type="password"] {
+        background-color: #0E1117 !important; 
+        border: 1px solid #23273A !important; 
         border-radius: 6px !important;
-        color: #FFF !important;
-        text-align: center !important;
-        font-size: 20px !important;
-        font-weight: 700 !important;
-        letter-spacing: 6px !important;
-        height: 46px !important;
+        color: #FFF !important; 
+        text-align: center !important; 
+        font-size: 20px !important; 
+        font-weight: 700 !important; 
+        letter-spacing: 8px !important; 
+        height: 48px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
     div[data-testid="stForm"] input:focus {
         border-color: #3D4563 !important;
         box-shadow: 0 0 0 3px rgba(61, 69, 99, 0.2) !important;
     }
     
-    /* Button Redesign */
-    div[data-testid="stForm"] button {
+    /* Form Submit Verification Action Button Layout Override */
+    div[data-testid="stForm"] div[data-testid="stFormSubmitButton"] {
+        width: 100% !important;
+        display: block !important;
+    }
+    div[data-testid="stForm"] button[kind="primaryFormSubmit"] {
         width: 100% !important;
         height: 46px !important;
         background-color: #F4D068 !important;
@@ -101,11 +118,15 @@ st.markdown("""
         letter-spacing: 1.5px !important;
         transition: all 0.15s ease !important;
         box-shadow: 0 4px 15px rgba(244, 208, 104, 0.15) !important;
-        margin-top: 10px !important;
+        margin: 0 !important;
+        display: block !important;
     }
-    div[data-testid="stForm"] button:hover {
+    div[data-testid="stForm"] button[kind="primaryFormSubmit"]:hover {
         background-color: #f7d983 !important;
-        color: #0E1117 !important;
+        transform: translateY(-1px);
+    }
+    div[data-testid="stForm"] button[kind="primaryFormSubmit"]:active {
+        transform: translateY(0);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -295,12 +316,10 @@ else:
             feedback.innerText = "Authenticating code...";
             
             try {
-                // Fetch validation confirmation payload securely 
                 const queryUrl = endpoint + "?action=verifyPin&pin=" + encodeURIComponent(pinValue);
                 const response = await fetch(queryUrl);
                 const result = await response.json();
                 
-                // CRITICAL VALIDATION: Terminate flow immediately if status metadata indicates 'Expired'
                 if (result.status === "Expired" || result.message === "Expired") {
                     feedback.style.color = "#ef4444"; 
                     feedback.innerText = "This security code has Expired.";
