@@ -84,7 +84,7 @@ html_base_template = """
     .casement-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; padding: 0 15px; }
     .grid-node { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
     
-    /* Strict matching frames */
+    /* Strict identical baseline frames */
     .image-frame { 
         width: 60px; 
         height: 60px; 
@@ -95,7 +95,7 @@ html_base_template = """
         box-sizing: border-box; 
     }
     
-    /* Active images scaled to maximum capacity within frame bounds */
+    /* Scale active images cleanly inside frame boundaries */
     .image-frame img { 
         width: 100%;
         height: 100%;
@@ -104,7 +104,7 @@ html_base_template = """
         box-sizing: border-box;
     }
     
-    /* Lock placeholders shrunk down with box-sizing to visually look identical to raw files */
+    /* Lock elements scaled down slightly so they visually match file shapes perfectly */
     .lock-node { 
         width: 52px; 
         height: 52px; 
@@ -115,7 +115,7 @@ html_base_template = """
         align-items: center; 
         justify-content: center; 
         color: #3D4563; 
-        font-size: 11px; /* Smaller font to balanced proportions */
+        font-size: 11px; 
         transition: transform 0.15s ease-in-out; 
         box-sizing: border-box; 
     }
