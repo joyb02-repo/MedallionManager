@@ -353,6 +353,18 @@ for wood_name in MEDALLION_COLUMNS:
     else: rarity = value = availability = probability = "N/A"
         
     img_b64 = get_image_base64(f"assets/{wood_name.lower()}.png")
+    
+    # Check if availability value is explicitly 0 or "0"
+    is_sold_out = str(availability).strip() == "0"
+    
+    # Conditional node display: Image if owned, ❌ if sold out & unowned, 🔒 otherwise
+    if owned > 0 and img_b64:
+        frame_content = f"<img src='data:image/png;base64,{img_b64}' />"
+    elif is_sold_out:
+        frame_content = "<div class='lock-node'>❌</div>"
+    else:
+        frame_content = "<div class='lock-node'>🔒</div>"
+        
     grid_elements_html += f"""
     <div class="grid-node">
         <div class="node-tooltip">
@@ -363,7 +375,7 @@ for wood_name in MEDALLION_COLUMNS:
             <div class="tip-line">Probability: <span>{probability}</span></div>
         </div>
         <div class="image-frame">
-            {"<img src='data:image/png;base64," + img_b64 + "' />" if (owned > 0 and img_b64) else "<div class='lock-node'>🔒</div>"}
+            {frame_content}
         </div>
         <div class="quantity-badge">{"x" + str(owned) if owned > 0 else "&nbsp;"}</div>
         <div class="label-badge">{display_label}</div>
