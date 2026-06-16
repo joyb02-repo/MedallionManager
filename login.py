@@ -86,10 +86,36 @@ st.markdown("""
     
     /* Sized perfectly for 4 digits text string length entries */
     div.stTextInput { width: 160px !important; margin: 0 auto 5px auto !important; }
+    
+    /* Targets base element engine framework layer to line components up vertically */
+    div[data-testid="stTextInput"] div[data-component="stTextInputRootElement"] {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: 46px !important;
+        box-sizing: border-box !important;
+    }
+    
+    /* Fixes the text placement directly in the vertical center layout dead space */
     div.stTextInput input {
         background-color: #0E1117 !important; border: 1px solid #23273A !important; border-radius: 6px !important;
         color: #FFF !important; text-align: center !important; font-size: 24px !important; font-weight: 700 !important;
         letter-spacing: 6px !important; height: 46px !important; box-sizing: border-box !important;
+        display: flex !important;
+        align-items: center !important;
+        padding-top: 0px !important;
+        padding-bottom: 0px !important;
+        line-height: 46px !important;
+    }
+    
+    /* Aligns interactive show/hide password visibility iconography elements precisely in line */
+    div[data-testid="stTextInput"] button {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: 100% !important;
+        margin-top: 0px !important;
+        margin-bottom: 0px !important;
     }
     
     /* Completely hide Streamlit instructions & 'Press ENTER to submit' guidance text lines */
@@ -160,7 +186,7 @@ st.markdown('<div class="login-card-anchor"></div>', unsafe_allow_html=True)
 if logo_b64:
     st.markdown(f'<div class="login-logo-container"><img src="data:image/png;base64,{logo_b64}" /></div>', unsafe_allow_html=True)
 
-st.markdown('<div class="custom-login-header">Portfolio System Access</div>', unsafe_allow_html=True)
+st.markdown('<div class="custom-login-header">Medallion Management Portal</div>', unsafe_allow_html=True)
 st.markdown('<div class="custom-login-sub">Enter your 4-digit master passcode key to authenticate transaction nodes.</div>', unsafe_allow_html=True)
 
 input_passcode = st.text_input("Passcode", type="password", label_visibility="collapsed", max_chars=4)
