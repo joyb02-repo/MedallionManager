@@ -1,6 +1,6 @@
 # ====================================================================
 # PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
-# FILE: login.py (CLEAN REVERTED DESIGN - OUTER CONTAINER REMOVED)
+# FILE: login.py (MOBILE OPTIMIZED RESPONSIVE DESIGN)
 # ====================================================================
 
 import streamlit as st
@@ -41,7 +41,7 @@ def get_http_session():
     session.mount("http://", adapter)
     return session
 
-# Global UI Style Framework - Strips out the background wrapper and maps the button cleanly
+# Global UI Style Framework - Responsive layout with fallback mobile scaling rules
 st.markdown("""
 <style>
     .stApp {
@@ -60,14 +60,14 @@ st.markdown("""
         padding: 0 !important;
     }
     
-    /* Target the central login block frame directly to position neatly */
+    /* Target the central login block frame - Made fully fluid for mobile aspect ratios */
     div[data-testid="stVerticalBlock"]:has(div.login-card-anchor) {
         background: #161925 !important;
         border: 1px solid #23273A !important;
         border-radius: 12px !important;
         padding: 40px 45px !important;
         max-width: 440px !important;
-        width: 440px !important;
+        width: 92% !important;
         margin: 60px auto 0 auto !important;
         box-shadow: 0 20px 45px rgba(0,0,0,0.5) !important;
         text-align: center !important;
@@ -79,7 +79,7 @@ st.markdown("""
     
     /* Massive Logo Container Framework */
     .login-logo-container { width: 100%; text-align: center; margin-bottom: 25px; display: flex; justify-content: center; }
-    .login-logo-container img { max-height: 140px; width: auto; object-fit: contain; }
+    .login-logo-container img { max-height: 140px; max-width: 100%; width: auto; object-fit: contain; }
     
     .custom-login-header { font-size: 22px; font-weight: 600; color: #FFFFFF; margin-bottom: 10px; width: 100%; text-align: center !important; letter-spacing: 0.5px; font-family: 'Inter', sans-serif; }
     .custom-login-sub { font-size: 13px; color: rgba(255, 255, 255, 0.4); margin-bottom: 30px; width: 100%; text-align: center !important; line-height: 1.5; font-family: 'Inter', sans-serif; }
@@ -177,6 +177,40 @@ st.markdown("""
     
     /* Adjust error system notifications layouts */
     div[data-testid="stAlert"] { margin-top: 15px !important; width: 100% !important; }
+
+    /* ====================================================================
+       MOBILE RESPONSIVE BREAKPOINT RULES (Viewport Widths under 480px)
+       ==================================================================== */
+    @media (max-width: 480px) {
+        div[data-testid="stVerticalBlock"]:has(div.login-card-anchor) {
+            padding: 30px 20px !important; /* Reduces outer layout edges compression */
+            margin: 30px auto 0 auto !important; /* Balances card distance from top screen boundary */
+        }
+        .custom-login-header {
+            font-size: 19px !important; /* Slightly reduces font size to prevent unnatural character line breaks */
+        }
+        .custom-login-sub {
+            font-size: 12px !important;
+            margin-bottom: 20px !important;
+        }
+        .login-logo-container {
+            margin-bottom: 15px !important;
+        }
+        .login-logo-container img {
+            max-height: 110px !important; /* Scales down logo slightly to optimize display real estate */
+        }
+        div.stTextInput {
+            width: 150px !important; /* Keeps structural parameters tightly bound to center canvas column */
+        }
+        div.stTextInput input {
+            font-size: 21px !important; /* Minimizes font tracking scale to fully protect layout alignment ratios */
+            letter-spacing: 4px !important;
+        }
+        div.stButton > button {
+            height: 46px !important; /* Makes login submission trigger touch friendly but visually elegant */
+            font-size: 13px !important;
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 
