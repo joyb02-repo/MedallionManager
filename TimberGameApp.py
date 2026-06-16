@@ -29,9 +29,13 @@ def fetch_all_sheet_data(user_id):
         if response.status_code == 200:
             data = response.json()
             if data.get("status") == "success":
-                medallions_map = {str(m["Medallion"]).strip().lower(): m for m in data.get("medallions", [])}
-                master_summary = data.get("master_summary", {})
+                # FIX: Map the configurations array correctly by matching the lowercased name string
+                medallions_map = {}
+                for m in data.get("medallions", []):
+                    name_key = str(m.get("Medallion", "")).strip().lower()
+                    medallions_map[name_key] = m
                 
+                master_summary = data.get("master_summary", {})
                 inventory_counts = master_summary.get("Inventory", {})
                 val = master_summary.get("CollectionValue", "$0")
                 coll = master_summary.get("MedallionsCollected", "0")
@@ -65,7 +69,7 @@ for wood in MEDALLION_COLUMNS:
 asset_map_js += "}"
 
 # ====================================================================
-# HTML/CSS RENDER CONTEXT (Standardized Rigid Grid Geometry)
+# HTML/CSS RENDER CONTEXT (Mathematical Alignment Guardrails)
 # ====================================================================
 html_base_template = """
 <style>
@@ -81,12 +85,41 @@ html_base_template = """
     .casement-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; padding: 0 15px; }
     .grid-node { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
     
-    /* Strict sizing constraints ensure identical node bounding shapes */
-    .image-frame { width: 62px; height: 62px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; box-sizing: border-box; }
-    .image-frame img { width: 62px; height: 62px; object-fit: contain; transition: transform 0.15s ease-in-out; }
+    /* Strict dimensions with box-sizing to force identical visual sizes across borders & assets */
+    .image-frame { 
+        width: 62px; 
+        height: 62px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        margin-bottom: 8px; 
+        box-sizing: border-box; 
+    }
     
-    /* Form matches image bounding size natively to stop uneven rendering shrinking loops */
-    .lock-node { width: 62px; height: 62px; border-radius: 50%; border: 2px dashed #23273A; background: #161925; display: flex; align-items: center; justify-content: center; color: #3D4563; font-size: 14px; transition: transform 0.15s ease-in-out; box-sizing: border-box; }
+    /* Object-fit contain scales up the asset cleanly if it has native file boundaries */
+    .image-frame img { 
+        width: 62px; 
+        height: 62px; 
+        object-fit: contain; 
+        transition: transform 0.15s ease-in-out; 
+        box-sizing: border-box;
+    }
+    
+    /* Box-sizing ensures the 2px border stays INSIDE the 62px space rather than blowing it up */
+    .lock-node { 
+        width: 62px; 
+        height: 62px; 
+        border-radius: 50%; 
+        border: 2px dashed #23273A; 
+        background: #161925; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        color: #3D4563; 
+        font-size: 14px; 
+        transition: transform 0.15s ease-in-out; 
+        box-sizing: border-box; 
+    }
     
     .grid-node:hover .image-frame img, .grid-node:hover .lock-node { transform: scale(1.15); }
     .quantity-badge { font-size: 12px; font-weight: 700; color: #F4D068; margin-bottom: 3px; min-height: 15px; }
@@ -222,6 +255,8 @@ for wood_name in MEDALLION_COLUMNS:
     lookup_key = wood_name.strip().lower()
     
     owned = int(live_inventory.get(lookup_key, 0))
+    
+    # FIX: We now fetch by our lowercased lookup key to guarantee exact sheet mapping matches
     sheet_row = live_data.get(lookup_key, None)
     rarity_class = ""
     
@@ -249,7 +284,7 @@ for wood_name in MEDALLION_COLUMNS:
         except ValueError:
             probability = f"{prob_str}%" if prob_str else "N/A"
     else:
-        rarity = value = availability = probability = "Loading..."
+        rarity = value = availability = probability = "N/A"
         
     img_b64 = get_image_base64(f"assets/{wood_name.lower()}.png")
     
