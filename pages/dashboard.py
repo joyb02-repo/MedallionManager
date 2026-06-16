@@ -65,8 +65,7 @@ LABEL_MAPPING = {
 # ====================================================================
 
 # This is child slot 1 - Permanently vaporized by the top-level CSS block
-if st.button("Route Store", key="sys_route_store_btn"):
-    st.switch_page("pages/store.py")
+
 
 # This is child slot 2 - Stays 100% clean, visible, and functional
 if st.button("Update Data 🔄", key="sys_refresh_btn"):
