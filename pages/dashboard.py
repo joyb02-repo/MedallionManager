@@ -136,8 +136,6 @@ html_base_template = """
     .dashboard-row { display: flex; justify-content: center; gap: 20px; margin-top: 30px; padding: 0 15px; }
     .stat-card { background: #161925; border: 1px solid #23273A; border-radius: 6px; padding: 10px 20px; min-width: 180px; text-align: center; }
     .stat-label { font-size: 11px; text-transform: uppercase; color: #718096; margin-bottom: 4px; }
-    
-    /* Updated stat-value color directly to the theme's yellowy gold tone */
     .stat-value { font-size: 18px; font-weight: 700; color: #F4D068; }
     
     .action-container { display: flex; flex-direction: column; align-items: center; margin-top: 25px; width: 100%; }
@@ -154,8 +152,10 @@ html_base_template = """
     .spin-box img { width: 88%; height: 88%; object-fit: contain; }
     .outcome-text-wrapper { margin-top: 15px; height: 35px; text-align: center; opacity: 0; }
     .outcome-bottom { font-size: 18px; font-weight: 800; color: #F4D068; }
-    .claim-button { margin-top: 14px; width: 160px; height: 32px; background-color: transparent; border: 2px solid #F4D068; border-radius: 4px; color: #F4D068; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; opacity: 0; transform: translateY(5px); transition: all 0.2s; }
-    .claim-button.visible { opacity: 1; transform: translateY(0); }
+    
+    /* Ensured visibility state transformations execute accurately */
+    .claim-button { margin-top: 14px; width: 160px; height: 32px; background-color: transparent; border: 2px solid #F4D068; border-radius: 4px; color: #F4D068; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; opacity: 0; transform: translateY(5px); transition: all 0.2s; display: inline-block; }
+    .claim-button.visible { opacity: 1 !important; transform: translateY(0) !important; }
     .claim-button:hover { background-color: #F4D068; color: #0E1117; }
 </style>
 
@@ -322,4 +322,5 @@ html_elements = html_elements.replace("__USERNAME_UPPER__", st.session_state["us
 html_elements = html_elements.replace("__PASSCODE_RAW__", st.session_state["user_passcode"])
 html_elements = html_elements.replace("__API_URL_PLACEHOLDER__", API_URL)
 
-st.components.v1.html(html_elements, height=730, scrolling=False)
+# Expanded global rendering canvas height context to 900px to fully contain claim triggers cleanly
+st.components.v1.html(html_elements, height=900, scrolling=False)
