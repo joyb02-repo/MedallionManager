@@ -40,36 +40,37 @@ st.markdown("""
     }
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; height: 0px; }
     div.block-container { padding-top: 20px !important; padding-bottom: 10px !important; max-width: 100% !important; }
-    
-    /* Precision target ONLY the routing bridge wrapper */
-    div.invisible-gateway,
-    div.invisible-gateway + div,
-    div:has(> .invisible-gateway) {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        height: 0px !important;
-        width: 0px !important;
-        max-height: 0px !important;
-        position: absolute !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        pointer-events: none !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
 # Encapsulating background utility hooks inside a strictly blocked CSS class container
+# ====================================================================
+# SYSTEM BACKEND PROCESSORS (INVISIBLE NAVIGATION BRIDGES)
+# ====================================================================
+
+# 1. This button renders normally and stays fully functional at the top left
 if st.button("Update Data 🔄", key="sys_refresh_btn"):
     st.cache_data.clear()
     st.rerun()
 
-# 2. The routing button gets safely locked in an invisible box:
-with st.container():
-    st.markdown('<div class="invisible-gateway">', unsafe_allow_html=True)
-    if st.button("Route Store", key="sys_route_store_btn"):
-        st.switch_page("pages/store.py")
-    st.markdown('</div>', unsafe_allow_html=True)
+# 2. Native st.html targets the container built right below it and vaporizes it
+st.html("""
+<style>
+    /* Precision strike: Find the Streamlit block wrapping our specific key and drop it */
+    [data-testid="stVerticalBlock"] > div:has(button[key="sys_route_store_btn"]) {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
+        position: absolute !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+</style>
+""")
+
+# This is the button the iframe clicks in the background. It is now 100% invisible.
+if st.button("Route Store", key="sys_route_store_btn"):
+    st.switch_page("pages/store.py")
 
 def get_image_base64(path):
     if os.path.exists(path):
