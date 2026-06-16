@@ -51,7 +51,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Active listener to reset cache when iframe fires a mining win claim
-if st.button("SYS_REFRESH", key="sys_refresh_btn"):
+if st.button("Update Data 🔄", key="sys_refresh_btn"):
     st.cache_data.clear()
     st.rerun()
 
@@ -92,12 +92,14 @@ html_base_template = """
     body { margin: 0; padding: 45px 0 0 0; background: transparent; font-family: 'Inter', sans-serif; position: relative; }
     .header-wrapper { position: relative; max-width: 100%; margin: 0 auto; padding: 0 15px; text-align: center; }
     
+    .logout-form-wrapper {
+        position: absolute; top: -25px; right: 15px; z-index: 99999 !important;
+    }
     .logout-btn-global {
-        position: absolute; top: -25px; right: 15px; height: 32px; padding: 0 14px;
+        height: 32px; padding: 0 14px;
         background: #161925; border: 1px solid #23273A; border-radius: 6px;
         color: #718096; font-size: 11px; font-weight: 700; text-transform: uppercase;
         letter-spacing: 0.5px; cursor: pointer; display: flex; align-items: center; gap: 6px; 
-        z-index: 1 !important;
     }
     .logout-btn-global:hover { border-color: #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.05); }
     
@@ -160,7 +162,11 @@ html_base_template = """
 </style>
 
 <div class="header-wrapper">
-    <button class="logout-btn-global" onclick="executeSystemLogout()">🔓 Logout</button>
+    <form class="logout-form-wrapper" action="https://medallionmanager.streamlit.app/" method="get" target="_top">
+        <input type="hidden" name="logout" value="true" />
+        <button type="submit" class="logout-btn-global">🔓 Logout</button>
+    </form>
+    
     <div class="portfolio-title">Timber Medallion Portfolio: <span class="user-accent">__USERNAME_UPPER__</span></div>
     <div class="portfolio-intro">
         Master tracking dashboard connected live to cloud inventory matrices. Authenticated users can generate verified asset transactions by supplying validation tokens below. Hover over any node in your matrix layout to see real-time supply indexes, market valuations, and algorithm probabilities. Premium tier tokens scale up to the highly coveted, single production run <span>Agarwood Medallion</span>.
@@ -198,10 +204,6 @@ html_base_template = """
     const pool = ['Spruce', 'Pine', 'Meranti', 'Balsa', 'Oak', 'Maple', 'Walnut', 'Cherry', 'Mahogany', 'Ebony', 'Rosewood', 'Agarwood'];
     const endpoint = "__API_URL_PLACEHOLDER__";
     let selectedItem = "";
-
-    function executeSystemLogout() {
-        window.parent.location.href = window.parent.location.origin + window.parent.location.pathname + '?logout=true';
-    }
 
     async function evaluatePinAuthorization() {
         const pinValue = document.getElementById("pinField").value.trim();
@@ -246,7 +248,7 @@ html_base_template = """
         imgPing.onload = imgPing.onerror = function() {
             setTimeout(() => {
                 const parentDoc = window.parent.document;
-                const refreshActuator = Array.from(parentDoc.querySelectorAll('button')).find(el => el.innerText.includes('SYS_REFRESH'));
+                const refreshActuator = Array.from(parentDoc.querySelectorAll('button')).find(el => el.innerText.includes('Update Data 🔄'));
                 if (refreshActuator) {
                     refreshActuator.click();
                 } else {
