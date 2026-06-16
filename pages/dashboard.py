@@ -39,7 +39,7 @@ st.markdown("""
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; height: 0px; }
     
     /* Remove default multi-page structural padding margins to match original look */
-    div.block-container { padding-top: 25px !important; padding-bottom: 10px !important; max-width: 100% !important; }
+    div.block-container { padding-top: 20px !important; padding-bottom: 10px !important; max-width: 100% !important; }
     
     /* Hide the silent iframe update actuator system refresh button */
     div.element-container:has(button[key="sys_refresh_btn"]) {
@@ -89,12 +89,13 @@ asset_map_js += "}"
 # ====================================================================
 html_base_template = """
 <style>
-    body { margin: 0; padding: 0; background: transparent; font-family: 'Inter', sans-serif; position: relative; }
+    /* Added top padding to shift the entire layout down, preventing tooltip clipping */
+    body { margin: 0; padding: 45px 0 0 0; background: transparent; font-family: 'Inter', sans-serif; position: relative; }
     .header-wrapper { position: relative; max-width: 100%; margin: 0 auto; padding: 0 15px; text-align: center; }
     
     /* Logout execution component bounds layout link */
     .logout-btn-global {
-        position: absolute; top: 0; right: 15px; height: 32px; padding: 0 14px;
+        position: absolute; top: -25px; right: 15px; height: 32px; padding: 0 14px;
         background: #161925; border: 1px solid #23273A; border-radius: 6px;
         color: #718096; font-size: 11px; font-weight: 700; text-transform: uppercase;
         letter-spacing: 0.5px; cursor: pointer; display: flex; align-items: center; gap: 6px; 
@@ -104,10 +105,11 @@ html_base_template = """
     
     .portfolio-title { font-size: 24px; font-weight: 600; color: #FFFFFF; margin-bottom: 8px; }
     .portfolio-title span.user-accent { color: #F4D068; }
-    .portfolio-intro { max-width: 800px; margin: 0 auto 20px auto; font-size: 13px; line-height: 1.6; color: rgba(255, 255, 255, 0.25); }
-    .portfolio-intro span { color: rgba(244, 208, 104, 0.4); font-weight: 600; }
+    .portfolio-intro { max-width: 850px; margin: 0 auto 35px auto; font-size: 13px; line-height: 1.6; color: rgba(255, 255, 255, 0.35); }
+    .portfolio-intro span { color: rgba(244, 208, 104, 0.8); font-weight: 600; }
     
-    .casement-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; padding: 0 15px; }
+    /* Grid spacing adjusted to add clean separation under the title area */
+    .casement-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; padding: 0 15px; margin-top: 10px; }
     .grid-node { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
     .image-frame { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
     .image-frame img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.15s ease-in-out; }
@@ -162,7 +164,9 @@ html_base_template = """
 <div class="header-wrapper">
     <button class="logout-btn-global" onclick="executeSystemLogout()">🔓 Logout</button>
     <div class="portfolio-title">Timber Medallion Portfolio: <span class="user-accent">__USERNAME_UPPER__</span></div>
-    <div class="portfolio-intro"> Master tracking dashboard powered directly by your cloud inventory records. Premium tokens scale in rarity up to the single production run <span>Agarwood Medallion</span>.</div>
+    <div class="portfolio-intro">
+        Master tracking dashboard connected live to cloud inventory matrices. Authenticated users can generate verified asset transactions by supplying validation tokens below. Hover over any node in your matrix layout to see real-time supply indexes, market valuations, and algorithm probabilities. Premium tier tokens scale up to the highly coveted, single production run <span>Agarwood Medallion</span>.
+    </div>
 </div>
 
 <div class="casement-grid">__GRID_ITEMS_PLACEHOLDER__</div>
@@ -198,7 +202,6 @@ html_base_template = """
     let selectedItem = "";
 
     function executeSystemLogout() {
-        // Safe cross-window hook to drop state inside parent window engine
         window.parent.location.href = window.parent.location.origin + window.parent.location.pathname + '?logout=true';
     }
 
@@ -321,4 +324,5 @@ html_elements = html_elements.replace("__USERNAME_UPPER__", st.session_state["us
 html_elements = html_elements.replace("__PASSCODE_RAW__", st.session_state["user_passcode"])
 html_elements = html_elements.replace("__API_URL_PLACEHOLDER__", API_URL)
 
-st.components.v1.html(html_elements, height=685, scrolling=False)
+# Expanded height bounding box to guarantee tooltip displays cleanly
+st.components.v1.html(html_elements, height=730, scrolling=False)
