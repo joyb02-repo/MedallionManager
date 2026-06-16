@@ -1,5 +1,6 @@
 # ====================================================================
-# PLATINUM MASTER WORKSPACE - STREAMLIT ENGINE WORKSPACE (SECURE ACCESS)
+# PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
+# RELEASE NAME: EXCALIBUR (LATEST MASTER BACKUP)
 # ENVIRONMENT SPECIFICATION: GITHUB DEPLOYMENT RUNTIME READY
 # ====================================================================
 
@@ -39,6 +40,9 @@ def get_image_base64(path):
             return base64.b64encode(image_file.read()).decode()
     return None
 
+# Check for branding logo assets
+logo_b64 = get_image_base64("assets/login_logo.png")
+
 # ====================================================================
 # ADVANCED CUSTOM STYLING - FORCING STREAMLIT ELEMENT RE-DESIGN
 # ====================================================================
@@ -75,18 +79,31 @@ st.markdown("""
         background: #161925 !important;
         border: 1px solid #23273A !important;
         border-radius: 12px !important;
-        padding: 45px 40px !important;
-        max-width: 420px !important;
-        margin: 100px auto 0 auto !important;
+        padding: 40px 40px !important;
+        max-width: 440px !important;
+        margin: 80px auto 0 auto !important;
         box-shadow: 0 20px 45px rgba(0,0,0,0.5) !important;
+        text-align: center !important;
+    }
+    
+    /* Logo Container Framework */
+    .login-logo-container {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .login-logo-container img {
+        max-height: 60px;
+        width: auto;
+        object-fit: contain;
     }
     
     /* Clean text layout classes */
     .custom-login-header {
-        font-size: 24px; font-weight: 600; color: #FFFFFF; margin-bottom: 12px; letter-spacing: 0.5px; font-family: 'Inter', sans-serif; text-align: left;
+        font-size: 22px; font-weight: 600; color: #FFFFFF; margin-bottom: 10px; letter-spacing: 0.5px; font-family: 'Inter', sans-serif; text-align: center;
     }
     .custom-login-sub {
-        font-size: 13px; color: rgba(255, 255, 255, 0.35); margin-bottom: 30px; line-height: 1.5; font-family: 'Inter', sans-serif; text-align: left;
+        font-size: 13px; color: rgba(255, 255, 255, 0.4); margin-bottom: 30px; line-height: 1.5; font-family: 'Inter', sans-serif; text-align: center;
     }
     
     /* Normalize block layout wrapper items from breaking or wrapping cards */
@@ -96,23 +113,23 @@ st.markdown("""
         width: 100% !important;
     }
     
-    /* Form Password Field Text Input Layout Box Override */
+    /* Compact Passcode Text Input Layout Frame Override */
     div[data-testid="stForm"] div[data-testid="stTextInput"] {
-        width: 100% !important;
-        margin-bottom: 18px !important;
+        max-width: 220px !important;
+        margin: 0 auto 24px auto !important;
     }
-    div[data-testid="stForm"] input[type="password"] {
+    div[data-testid="stForm"] input {
         background-color: #0E1117 !important; 
         border: 1px solid #23273A !important; 
         border-radius: 6px !important;
         color: #FFF !important; 
         text-align: center !important; 
-        font-size: 20px !important; 
-        font-weight: 700 !important; 
-        letter-spacing: 8px !important; 
-        height: 48px !important;
-        width: 100% !important;
+        font-size: 16px !important; 
+        font-weight: 600 !important; 
+        letter-spacing: 4px !important; 
+        height: 44px !important;
         box-sizing: border-box !important;
+        padding: 0px !important;
     }
     div[data-testid="stForm"] input:focus {
         border-color: #3D4563 !important;
@@ -153,7 +170,10 @@ st.markdown("""
 if not st.session_state["authenticated"]:
     
     with st.form("secure_login_gateway"):
-        st.markdown('<div class="custom-login-header">Portfolio System Access</div>', unsafe_allow_html=True)
+        if logo_b64:
+            st.markdown(f'<div class="login-logo-container"><img src="data:image/png;base64,{logo_b64}" /></div>', unsafe_allow_html=True)
+            
+        st.markdown('<div class="custom-login-header">Medallion Management Portal</div>', unsafe_allow_html=True)
         st.markdown('<div class="custom-login-sub">Enter your 4-digit master passcode key to authenticate transaction nodes.</div>', unsafe_allow_html=True)
         
         input_passcode = st.text_input("Passcode", type="password", label_visibility="collapsed", max_chars=4)
