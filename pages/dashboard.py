@@ -1,13 +1,13 @@
 # ====================================================================
 # PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
-# FILE: pages/dashboard.py (COMPACT FULL-GRID PORT WITH FIXED CDF ODDS)
+# FILE: pages/dashboard.py (UPDATED WITH INTERACTIVE STORE LINK)
 # ====================================================================
 
 import streamlit as st
 import requests
 import os
 import base64
-import json  # Safely stringifies lists for JavaScript consumption
+import json
 
 # Security Wall: Redirect if not authenticated via root login file
 if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
@@ -28,7 +28,6 @@ LABEL_MAPPING = {
     "Mahogany": "MHGN", "Ebony": "EBNY", "Rosewood": "RSWD", "Agarwood": "AGAR"
 }
 
-# Master CSS Overrides to preserve the original integrated layout completely
 st.markdown("""
 <style>
     .stApp {
@@ -38,12 +37,10 @@ st.markdown("""
         background-size: 24px 24px;
     }
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; height: 0px; }
-    
-    /* Remove default multi-page structural padding margins to match original look */
     div.block-container { padding-top: 20px !important; padding-bottom: 10px !important; max-width: 100% !important; }
     
-    /* Hide the silent iframe update actuator system refresh button */
-    div.element-container:has(button[key="sys_refresh_btn"]) {
+    div.element-container:has(button[key="sys_refresh_btn"]),
+    div.element-container:has(button[key="sys_route_store_btn"]) {
         display: none !important;
         height: 0px !important;
         position: absolute !important;
@@ -51,10 +48,13 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Active listener to reset cache when iframe fires a mining win claim
+# Active listeners for iframe signals
 if st.button("Update Data 🔄", key="sys_refresh_btn"):
     st.cache_data.clear()
     st.rerun()
+
+if st.button("Route Store", key="sys_route_store_btn"):
+    st.switch_page("pages/store.py")
 
 def get_image_base64(path):
     if os.path.exists(path):
@@ -85,43 +85,40 @@ for wood in MEDALLION_COLUMNS:
     if b64: asset_map_js += f"'{wood}': 'data:image/png;base64,{b64}',"
 asset_map_js += "}"
 
-# ====================================================================
-# DYNAMIC WEIGHT PROBABILITY BUILDING BLOCK (COLUMN E EXTRACTION)
-# ====================================================================
 js_pool_items = []
 js_pool_weights = []
-
 for wood_name in MEDALLION_COLUMNS:
     lookup_key = wood_name.strip().lower()
     sheet_row = live_data.get(lookup_key, None)
-    weight_value = 1.0  # Fallback baseline weight if parsing breaks
-    
+    weight_value = 1.0
     if sheet_row and "Probability" in sheet_row:
         prob_str = str(sheet_row["Probability"]).replace("%", "").strip()
-        try:
-            weight_value = float(prob_str)
-        except ValueError:
-            weight_value = 1.0
-            
+        try: weight_value = float(prob_str)
+        except ValueError: weight_value = 1.0
     js_pool_items.append(wood_name)
     js_pool_weights.append(weight_value)
 
-# ====================================================================
-# IFRAME ARCHITECTURE COMPACT RE-INJECTION (PLATINUM DASHBOARD STYLE)
-# ====================================================================
 html_base_template = """
 <style>
     body { margin: 0; padding: 45px 0 0 0; background: transparent; font-family: 'Inter', sans-serif; position: relative; }
     .header-wrapper { position: relative; max-width: 100%; margin: 0 auto; padding: 0 15px; text-align: center; }
     
-    .logout-btn-global {
-        position: absolute; top: -25px; right: 15px; height: 32px; padding: 0 14px;
-        background: #161925; border: 1px solid #23273A; border-radius: 6px;
-        color: #718096; font-size: 11px; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 0.5px; cursor: pointer; display: flex; align-items: center; gap: 6px; 
-        z-index: 1 !important;
+    /* PROMINENT INTERACTIVE STORE BUTTON */
+    .store-btn-global {
+        position: absolute; top: -25px; right: 15px; height: 38px; padding: 0 20px;
+        background: linear-gradient(135deg, #F4D068 0%, #e0b84c 100%); border: none; border-radius: 6px;
+        color: #0E1117; font-size: 13px; font-weight: 800; text-transform: uppercase;
+        letter-spacing: 0.5px; cursor: pointer; display: flex; align-items: center; gap: 8px; 
+        box-shadow: 0 4px 15px rgba(244, 208, 104, 0.25);
+        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s, box-shadow 0.2s;
+        z-index: 9999 !important;
     }
-    .logout-btn-global:hover { border-color: #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.05); }
+    .store-btn-global:hover { 
+        transform: scale(1.08);
+        background: linear-gradient(135deg, #FFF 0%, #F4D068 100%);
+        box-shadow: 0 6px 20px rgba(244, 208, 104, 0.4);
+    }
+    .store-btn-global:active { transform: scale(0.98); }
     
     .portfolio-title { font-size: 24px; font-weight: 600; color: #FFFFFF; margin-bottom: 8px; }
     .portfolio-title span.user-accent { color: #F4D068; }
@@ -175,14 +172,13 @@ html_base_template = """
     .outcome-text-wrapper { margin-top: 15px; height: 35px; text-align: center; opacity: 0; }
     .outcome-bottom { font-size: 18px; font-weight: 800; color: #F4D068; }
     
-    /* Ensured visibility state transformations execute accurately */
     .claim-button { margin-top: 14px; width: 160px; height: 32px; background-color: transparent; border: 2px solid #F4D068; border-radius: 4px; color: #F4D068; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; opacity: 0; transform: translateY(5px); transition: all 0.2s; display: inline-block; }
     .claim-button.visible { opacity: 1 !important; transform: translateY(0) !important; }
     .claim-button:hover { background-color: #F4D068; color: #0E1117; }
 </style>
 
 <div class="header-wrapper">
-    <button class="logout-btn-global" onclick="executeSystemLogout()">🔓 Logout</button>
+    <button class="store-btn-global" onclick="triggerStoreRedirection()">Visit Store 🛒</button>
     <div class="portfolio-title">Timber Medallion Portfolio: <span class="user-accent">__USERNAME_UPPER__</span></div>
     <div class="portfolio-intro">
         Master tracking dashboard connected live to cloud inventory matrices. Authenticated users can generate verified asset transactions by supplying validation tokens below. Hover over any node in your matrix layout to see real-time supply indexes, market valuations, and algorithm probabilities. Premium tier tokens scale up to the highly coveted, single production run <span>Agarwood Medallion</span>.
@@ -222,12 +218,10 @@ html_base_template = """
     const endpoint = "__API_URL_PLACEHOLDER__";
     let selectedItem = "";
 
-    function executeSystemLogout() {
-        if (window.top && window.top.location) {
-            window.top.location.href = window.top.location.origin + window.top.location.pathname + '?logout=true';
-        } else {
-            window.parent.location.href = window.parent.location.origin + window.parent.location.pathname + '?logout=true';
-        }
+    function triggerStoreRedirection() {
+        const parentDoc = window.parent.document;
+        const router = Array.from(parentDoc.querySelectorAll('button')).find(el => el.innerText.includes('Route Store'));
+        if (router) router.click();
     }
 
     async function evaluatePinAuthorization() {
@@ -249,19 +243,15 @@ html_base_template = """
         } catch(e) {}
     }
 
-    // Cumulative Distribution Function (CDF) Selection Logic
     function selectWeightedWinner(items, itemWeights) {
         const totalWeight = itemWeights.reduce((acc, w) => acc + w, 0);
         const randomNum = Math.random() * totalWeight;
-        
         let runningSum = 0;
         for (let i = 0; i < items.length; i++) {
             runningSum += itemWeights[i];
-            if (randomNum <= runningSum) {
-                return items[i];
-            }
+            if (randomNum <= runningSum) return items[i];
         }
-        return items[items.length - 1]; // Safe fallback element
+        return items[items.length - 1];
     }
 
     function runMiningSequence() {
@@ -269,17 +259,13 @@ html_base_template = """
         const wrapper = document.getElementById('outcomeWrapper'); const itemTxt = document.getElementById('itemNameTxt'); const claimBtn = document.getElementById('claimBtn');
         document.getElementById('mineBtn').disabled = true; wrapper.style.opacity = "0"; claimBtn.classList.remove('visible'); box.style.display = "flex";
         
-        let counter = 0; 
-        let speed = 40; 
-        
-        // Selects the winner via proportional data array maps
+        let counter = 0; let speed = 40; 
         selectedItem = selectWeightedWinner(pool, weights);
         
         function cycle() {
             const currentItem = pool[counter % pool.length]; 
             if (assetLibrary[currentItem]) img.src = assetLibrary[currentItem]; 
             counter++;
-            
             if (speed < 320) { 
                 speed += 16; 
                 setTimeout(cycle, speed); 
@@ -303,25 +289,14 @@ html_base_template = """
             setTimeout(() => {
                 const parentDoc = window.parent.document;
                 const refreshActuator = Array.from(parentDoc.querySelectorAll('button')).find(el => el.innerText.includes('Update Data 🔄'));
-                if (refreshActuator) {
-                    refreshActuator.click();
-                } else {
-                    window.location.reload();
-                }
+                if (refreshActuator) refreshActuator.click();
+                else window.location.reload();
             }, 500);
         };
         imgPing.src = pingUrl;
     }
 </script>
 """
-
-# Native cross-page parent logout check
-if "logout" in st.query_params or st.query_params.get("logout") == "true":
-    st.query_params.clear()
-    st.session_state["authenticated"] = False
-    st.session_state["user_passcode"] = ""
-    st.session_state["username"] = "Guest"
-    st.switch_page("login.py")
 
 grid_elements_html = ""
 for wood_name in MEDALLION_COLUMNS:
@@ -353,11 +328,8 @@ for wood_name in MEDALLION_COLUMNS:
     else: rarity = value = availability = probability = "N/A"
         
     img_b64 = get_image_base64(f"assets/{wood_name.lower()}.png")
-    
-    # Check if availability value is explicitly 0 or "0"
     is_sold_out = str(availability).strip() == "0"
     
-    # Conditional node display: Image if owned, ❌ if sold out & unowned, 🔒 otherwise
     if owned > 0 and img_b64:
         frame_content = f"<img src='data:image/png;base64,{img_b64}' />"
     elif is_sold_out:
@@ -389,8 +361,6 @@ html_elements = html_elements.replace("__ASSET_MAP_PLACEHOLDER__", asset_map_js)
 html_elements = html_elements.replace("__USERNAME_UPPER__", st.session_state["username"].upper())
 html_elements = html_elements.replace("__PASSCODE_RAW__", st.session_state["user_passcode"])
 html_elements = html_elements.replace("__API_URL_PLACEHOLDER__", API_URL)
-
-# Inject parameters directly into Javascript environment configurations
 html_elements = html_elements.replace("__POOL_ITEMS_PLACEHOLDER__", json.dumps(js_pool_items))
 html_elements = html_elements.replace("__POOL_WEIGHTS_PLACEHOLDER__", json.dumps(js_pool_weights))
 
