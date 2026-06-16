@@ -84,6 +84,9 @@ st.markdown("""
         margin: 80px auto 0 auto !important;
         box-shadow: 0 20px 45px rgba(0,0,0,0.5) !important;
         text-align: center !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
     }
     
     /* Logo Container Framework */
@@ -100,10 +103,10 @@ st.markdown("""
     
     /* Clean text layout classes */
     .custom-login-header {
-        font-size: 22px; font-weight: 600; color: #FFFFFF; margin-bottom: 10px; letter-spacing: 0.5px; font-family: 'Inter', sans-serif; text-align: center;
+        font-size: 22px; font-weight: 600; color: #FFFFFF; margin-bottom: 10px; letter-spacing: 0.5px; font-family: 'Inter', sans-serif; text-align: center; width: 100%;
     }
     .custom-login-sub {
-        font-size: 13px; color: rgba(255, 255, 255, 0.4); margin-bottom: 30px; line-height: 1.5; font-family: 'Inter', sans-serif; text-align: center;
+        font-size: 13px; color: rgba(255, 255, 255, 0.4); margin-bottom: 30px; line-height: 1.5; font-family: 'Inter', sans-serif; text-align: center; width: 100%;
     }
     
     /* Normalize block layout wrapper items from breaking or wrapping cards */
@@ -124,12 +127,12 @@ st.markdown("""
         border-radius: 6px !important;
         color: #FFF !important; 
         text-align: center !important; 
-        font-size: 16px !important; 
-        font-weight: 600 !important; 
-        letter-spacing: 4px !important; 
+        font-size: 26px !important; 
+        font-weight: 700 !important; 
+        letter-spacing: 6px !important; 
         height: 44px !important;
         box-sizing: border-box !important;
-        padding: 0px !important;
+        padding: 0px 0px 0px 6px !important;
     }
     div[data-testid="stForm"] input:focus {
         border-color: #3D4563 !important;
@@ -138,8 +141,10 @@ st.markdown("""
     
     /* Form Submit Verification Action Button Layout Override */
     div[data-testid="stForm"] div[data-testid="stFormSubmitButton"] {
-        width: 100% !important;
+        max-width: 220px !important;
+        margin: 0 auto !important;
         display: block !important;
+        width: 100% !important;
     }
     div[data-testid="stForm"] button[kind="primaryFormSubmit"] {
         width: 100% !important;
@@ -154,7 +159,7 @@ st.markdown("""
         letter-spacing: 1.5px !important;
         transition: all 0.15s ease !important;
         box-shadow: 0 4px 15px rgba(244, 208, 104, 0.15) !important;
-        margin: 0 !important;
+        margin: 0 auto !important;
         display: block !important;
     }
     div[data-testid="stForm"] button[kind="primaryFormSubmit"]:hover {
@@ -202,8 +207,16 @@ if not st.session_state["authenticated"]:
 else:
     # Invisible bridge layout element used for data syncing
     if st.text_input("refresh_bridge", key="refresh_trigger", label_visibility="collapsed") != "":
-        st.session_state["refresh_counter"] += 1
-        st.rerun()
+        if st.session_state["refresh_trigger"] == "LOGOUT_EXECUTE":
+            st.session_state["authenticated"] = False
+            st.session_state["user_passcode"] = ""
+            st.session_state["username"] = "Guest"
+            st.session_state["refresh_trigger"] = ""
+            st.rerun()
+        elif st.session_state["refresh_trigger"] == "REFRESH_DATA_FLOW":
+            st.session_state["refresh_trigger"] = ""
+            st.session_state["refresh_counter"] += 1
+            st.rerun()
 
     @st.cache_data(ttl=0)
     def fetch_all_sheet_data(passcode, refresh_run):
@@ -247,7 +260,7 @@ else:
             position: absolute; top: 0; right: 15px; height: 32px; padding: 0 14px;
             background: #161925; border: 1px solid #23273A; border-radius: 6px;
             color: #718096; font-size: 11px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 0.5px; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; gap: 6px;
+            letter-spacing: 0.5px; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; gap: 6px; z-index: 999999;
         }
         .logout-btn-global:hover {
             border-color: #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.05);
@@ -263,9 +276,6 @@ else:
         .lock-node { width: 52px; height: 52px; border-radius: 50%; border: 2px dashed #23273A; background: #161925; display: flex; align-items: center; justify-content: center; color: #3D4563; font-size: 11px; transition: transform 0.15s ease-in-out; box-sizing: border-box; }
         .grid-node:hover .image-frame img, .grid-node:hover .lock-node { transform: scale(1.15); }
         .quantity-badge { font-size: 12px; font-weight: 700; color: #F4D068; margin-bottom: 3px; min-height: 15px; }
-        .label-badge { font-size: 10px; font-weight: 700; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; }
-        
-        .node-tooltip { visibility: hidden; opacity: 0; position: absolute; top: -120px; left: 50%; transform: translateX(-50%); width: 180px; background: #161925; border: 1px solid #282E48; border-radius: 8px; padding: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); z-index: 99999; transition: opacity 0.12s ease-in-out; pointer-events: none; }
         .grid-node:hover .node-tooltip { visibility: visible; opacity: 1; }
         .grid-node:first-child .node-tooltip { left: 0; transform: translateX(0); }
         .grid-node:last-child .node-tooltip { left: auto; right: 0; transform: translateX(0); }
@@ -304,6 +314,8 @@ else:
         .claim-button { margin-top: 14px; width: 160px; height: 32px; background-color: transparent; border: 2px solid #F4D068; border-radius: 4px; color: #F4D068; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; opacity: 0; transform: translateY(5px); transition: all 0.2s ease-in-out; }
         .claim-button.visible { opacity: 1; transform: translateY(0); }
         .claim-button:hover { background-color: #F4D068; color: #0E1117; }
+        .label-badge { font-size: 10px; font-weight: 700; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; }
+        .node-tooltip { visibility: hidden; opacity: 0; position: absolute; top: -120px; left: 50%; transform: translateX(-50%); width: 180px; background: #161925; border: 1px solid #282E48; border-radius: 8px; padding: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); z-index: 99999; transition: opacity 0.12s ease-in-out; pointer-events: none; }
     </style>
 
     <div class="header-wrapper">
@@ -458,18 +470,6 @@ else:
         }
     </script>
     """
-
-    # Handle state transitions passed from the inline code layout blocks
-    if st.session_state["refresh_trigger"] == "LOGOUT_EXECUTE":
-        st.session_state["authenticated"] = False
-        st.session_state["user_passcode"] = ""
-        st.session_state["username"] = "Guest"
-        st.session_state["refresh_trigger"] = ""
-        st.rerun()
-    elif st.session_state["refresh_trigger"] == "REFRESH_DATA_FLOW":
-        st.session_state["refresh_trigger"] = ""
-        st.session_state["refresh_counter"] += 1
-        st.rerun()
 
     grid_elements_html = ""
     for wood_name in MEDALLION_COLUMNS:
