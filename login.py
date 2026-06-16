@@ -1,6 +1,6 @@
 # ====================================================================
 # PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
-# FILE: login.py (CLEAN NATIVE INTEGRATION - NO DUPLICATE FORMS)
+# FILE: login.py (FLAWLESSLY CENTERED HYBRID INTERFACE)
 # ====================================================================
 
 import streamlit as st
@@ -41,7 +41,7 @@ def get_http_session():
     session.mount("http://", adapter)
     return session
 
-# Global UI Style Framework - Styles the native container directly to prevent duplicates
+# Global UI Style Framework - Enforces flawless grid centering and button stretching
 st.markdown("""
 <style>
     .stApp {
@@ -52,27 +52,29 @@ st.markdown("""
     }
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; height: 0px; }
     
-    /* Target the central Column container card directly */
+    /* Target the vertical block container inside our center column layout */
     div[data-testid="stVerticalBlock"]:has(div.login-card-anchor) {
         background: #161925 !important;
         border: 1px solid #23273A !important;
         border-radius: 12px !important;
         padding: 40px 45px !important;
-        max-width: 440px !important;
-        margin: 15px auto 0 auto !important;
+        width: 100% !important;
         box-shadow: 0 20px 45px rgba(0,0,0,0.5) !important;
         text-align: center !important;
         box-sizing: border-box !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
     }
     
-    /* Massive Logo Sizing rules */
+    /* Center text modifications */
     .login-logo-container { width: 100%; text-align: center; margin-bottom: 25px; display: flex; justify-content: center; }
     .login-logo-container img { max-height: 140px; width: auto; object-fit: contain; }
     
     .custom-login-header { font-size: 22px; font-weight: 600; color: #FFFFFF; margin-bottom: 10px; width: 100%; text-align: center !important; letter-spacing: 0.5px; font-family: 'Inter', sans-serif; }
     .custom-login-sub { font-size: 13px; color: rgba(255, 255, 255, 0.4); margin-bottom: 30px; width: 100%; text-align: center !important; line-height: 1.5; font-family: 'Inter', sans-serif; }
     
-    /* Center and format the Passcode input field */
+    /* Style the Passcode component box and input text alignment */
     div.stTextInput { width: 220px !important; margin: 0 auto 5px auto !important; }
     div.stTextInput input {
         background-color: #0E1117 !important; border: 1px solid #23273A !important; border-radius: 6px !important;
@@ -80,11 +82,13 @@ st.markdown("""
         letter-spacing: 6px !important; height: 46px !important; box-sizing: border-box !important;
     }
     
-    /* FORCE THE NATIVE STREAMLIT BUTTON TO BE THE BIG GOLDEN ONE */
+    /* Stretch the button fully across the card bounds layout */
     div.stButton {
         width: 100% !important;
         margin: 25px 0 0 0 !important;
         padding: 0 !important;
+        display: flex !important;
+        justify-content: center !important;
     }
     
     div.stButton > button {
@@ -106,7 +110,7 @@ st.markdown("""
         transition: all 0.2s ease-in-out !important;
     }
     
-    /* High Fidelity Hover & Interaction States */
+    /* Interactive Hover Transitions */
     div.stButton > button:hover {
         background-color: #f5d77f !important;
         color: #0E1117 !important;
@@ -126,39 +130,41 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(244, 208, 104, 0.1) !important;
     }
     
-    /* Fix error messaging alignment box layout inside card */
+    /* Fix error messaging boundaries within the layout window */
     div[data-testid="stAlert"] { margin-top: 15px !important; width: 100% !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# Main centered column block structure
-st.markdown('<div class="login-card-anchor"></div>', unsafe_allow_html=True)
+# Build proportional outer column spacers to float the box exactly into the screen center
+left_spacer, center_target, right_spacer = st.columns([1.1, 1, 1.1])
 
-if logo_b64:
-    st.markdown(f'<div class="login-logo-container"><img src="data:image/png;base64,{logo_b64}" /></div>', unsafe_allow_html=True)
+with center_target:
+    st.markdown('<div class="login-card-anchor"></div>', unsafe_allow_html=True)
 
-st.markdown('<div class="custom-login-header">Portfolio System Access</div>', unsafe_allow_html=True)
-st.markdown('<div class="custom-login-sub">Enter your 4-digit master passcode key to authenticate transaction nodes.</div>', unsafe_allow_html=True)
+    if logo_b64:
+        st.markdown(f'<div class="login-logo-container"><img src="data:image/png;base64,{logo_b64}" /></div>', unsafe_allow_html=True)
 
-# Native inputs directly connected to processing hooks
-input_passcode = st.text_input("Passcode", type="password", label_visibility="collapsed", max_chars=4)
-submit_btn = st.button("Verify Passcode")
+    st.markdown('<div class="custom-login-header">Portfolio System Access</div>', unsafe_allow_html=True)
+    st.markdown('<div class="custom-login-sub">Enter your 4-digit master passcode key to authenticate transaction nodes.</div>', unsafe_allow_html=True)
 
-if submit_btn:
-    if len(input_passcode) < 4:
-        st.error("Please complete passcode entry.")
-    else:
-        with st.spinner("AUTHENTICATING..."):
-            try:
-                http_client = get_http_session()
-                chk = http_client.get(API_URL, params={"action": "fetchData", "passcode": input_passcode}, timeout=15)
-                
-                if chk.status_code == 200 and chk.json().get("status") == "success":
-                    st.session_state["user_passcode"] = input_passcode
-                    st.session_state["username"] = chk.json().get("username", "User")
-                    st.session_state["authenticated"] = True
-                    st.switch_page("pages/dashboard.py")
-                else:
-                    st.error("Access Denied: Passcode signature validation rejected.")
-            except Exception as e:
-                st.error("System Matrix Timeout. Please check your network connection.")
+    input_passcode = st.text_input("Passcode", type="password", label_visibility="collapsed", max_chars=4)
+    submit_btn = st.button("Verify Passcode")
+
+    if submit_btn:
+        if len(input_passcode) < 4:
+            st.error("Please complete passcode entry.")
+        else:
+            with st.spinner("AUTHENTICATING..."):
+                try:
+                    http_client = get_http_session()
+                    chk = http_client.get(API_URL, params={"action": "fetchData", "passcode": input_passcode}, timeout=15)
+                    
+                    if chk.status_code == 200 and chk.json().get("status") == "success":
+                        st.session_state["user_passcode"] = input_passcode
+                        st.session_state["username"] = chk.json().get("username", "User")
+                        st.session_state["authenticated"] = True
+                        st.switch_page("pages/dashboard.py")
+                    else:
+                        st.error("Access Denied: Passcode signature validation rejected.")
+                except Exception as e:
+                    st.error("System Matrix Timeout. Please check your network connection.")
