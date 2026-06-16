@@ -1,6 +1,6 @@
 # ====================================================================
 # PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
-# FILE: login.py (ZERO-SCROLL FIXED CANVAS DESIGN)
+# FILE: login.py (SCALE-TO-FIT FIXED DESIGN)
 # ====================================================================
 
 import streamlit as st
@@ -41,10 +41,10 @@ def get_http_session():
     session.mount("http://", adapter)
     return session
 
-# Global UI Style Framework - Completely overrides Streamlit container heights to force 0-scroll vertical centering
+# Global UI Style Framework - Scale calculations tied strictly to screen viewport constraints
 st.markdown("""
 <style>
-    /* Absolute reset of all nested parent containers that cause clipping or overflowing */
+    /* Absolute containment framework to break Streamlit's scrolling mechanics */
     html, body, .stApp, [data-testid="stMain"], [data-testid="stMainContainer"], .main, .block-container {
         margin: 0 !important;
         padding: 0 !important;
@@ -75,20 +75,22 @@ st.markdown("""
         box-shadow: none !important;
         padding: 0 !important;
         width: 100% !important;
+        height: 100% !important;
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
     }
     
-    /* Target the central login block frame - Uniform vertical spacing locked dynamically on screen sizes */
+    /* The Central Core Login Card Frame - Uses dynamic layout calculations to automatically scale with viewport heights */
     div[data-testid="stVerticalBlock"]:has(div.login-card-anchor) {
         background: #161925 !important;
         border: 1px solid #23273A !important;
         border-radius: 12px !important;
-        padding: 40px 45px !important;
+        padding: min(5vh, 40px) min(5vw, 45px) !important;
         max-width: 440px !important;
-        width: 440px !important;
-        margin: 0 auto !important; 
+        width: min(440px, 90vw) !important;
+        max-height: 85vh !important; /* Prevents container from ever bleeding past screen edge heights */
+        margin: auto !important; 
         box-shadow: 0 20px 45px rgba(0,0,0,0.5) !important;
         text-align: center !important;
         box-sizing: border-box !important;
@@ -98,38 +100,35 @@ st.markdown("""
         justify-content: center !important;
     }
     
-    /* Massive Logo Container Framework */
-    .login-logo-container { width: 100%; text-align: center; margin-bottom: 25px; display: flex; justify-content: center; }
-    .login-logo-container img { max-height: 140px; max-width: 100%; width: auto; object-fit: contain; }
+    /* Fluid Logo Component scaling bounds */
+    .login-logo-container { width: 100%; text-align: center; margin-bottom: min(3vh, 25px); display: flex; justify-content: center; }
+    .login-logo-container img { height: min(15vh, 130px); width: auto; object-fit: contain; }
     
-    .custom-login-header { font-size: 22px; font-weight: 600; color: #FFFFFF; margin-bottom: 10px; width: 100%; text-align: center !important; letter-spacing: 0.5px; font-family: 'Inter', sans-serif; }
-    .custom-login-sub { font-size: 13px; color: rgba(255, 255, 255, 0.4); margin-bottom: 30px; width: 100%; text-align: center !important; line-height: 1.5; font-family: 'Inter', sans-serif; }
+    .custom-login-header { font-size: min(5vw, 22px); font-weight: 600; color: #FFFFFF; margin-bottom: min(1.5vh, 10px); width: 100%; text-align: center !important; letter-spacing: 0.5px; font-family: 'Inter', sans-serif; }
+    .custom-login-sub { font-size: min(3.5vw, 13px); color: rgba(255, 255, 255, 0.4); margin-bottom: min(4vh, 30px); width: 100%; text-align: center !important; line-height: 1.5; font-family: 'Inter', sans-serif; }
     
-    /* Sized perfectly for 4 digits entries */
-    div.stTextInput { width: 160px !important; margin: 0 auto 5px auto !important; }
+    /* Passcode Wrapper Frame Input Column constraints */
+    div.stTextInput { width: min(160px, 45vw) !important; margin: 0 auto min(1vh, 5px) auto !important; }
     
-    /* Targets base element engine framework layer to line components up vertically */
     div[data-testid="stTextInput"] div[data-component="stTextInputRootElement"] {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        height: 46px !important;
+        height: min(6vh, 46px) !important;
         box-sizing: border-box !important;
     }
     
-    /* Fixes the text placement directly in the vertical center layout dead space */
     div.stTextInput input {
         background-color: #0E1117 !important; border: 1px solid #23273A !important; border-radius: 6px !important;
-        color: #FFF !important; text-align: center !important; font-size: 24px !important; font-weight: 700 !important;
-        letter-spacing: 6px !important; height: 46px !important; box-sizing: border-box !important;
+        color: #FFF !important; text-align: center !important; font-size: min(5.5vw, 24px) !important; font-weight: 700 !important;
+        letter-spacing: 6px !important; height: 100% !important; box-sizing: border-box !important;
         display: flex !important;
         align-items: center !important;
         padding-top: 0px !important;
         padding-bottom: 0px !important;
-        line-height: 46px !important;
+        line-height: normal !important;
     }
     
-    /* Aligns interactive show/hide password visibility iconography elements precisely in line */
     div[data-testid="stTextInput"] button {
         display: flex !important;
         align-items: center !important;
@@ -139,7 +138,6 @@ st.markdown("""
         margin-bottom: 0px !important;
     }
     
-    /* Completely hide Streamlit instructions & 'Press ENTER to submit' guidance text lines */
     div.stTextInput p, [data-testid="stWidgetInstructions"] { 
         display: none !important; 
         visibility: hidden !important; 
@@ -148,10 +146,10 @@ st.markdown("""
         padding: 0px !important; 
     }
     
-    /* Stretch the golden action button beautifully across the login template container card width */
+    /* Submission Interface triggers */
     div.stButton {
         width: 100% !important;
-        margin: 15px 0 0 0 !important;
+        margin: min(3vh, 25px) 0 0 0 !important;
         padding: 0 !important;
         display: flex !important;
         justify-content: center !important;
@@ -159,12 +157,12 @@ st.markdown("""
     
     div.stButton > button {
         width: 100% !important; 
-        height: 50px !important; 
+        height: min(7vh, 50px) !important; 
         background-color: #F4D068 !important; 
         border: none !important; 
         border-radius: 8px !important;
         color: #0E1117 !important; 
-        font-size: 14px !important; 
+        font-size: min(4vw, 14px) !important; 
         font-weight: 700 !important; 
         text-transform: uppercase !important; 
         letter-spacing: 1.5px !important;
@@ -176,63 +174,26 @@ st.markdown("""
         transition: all 0.2s ease-in-out !important;
     }
     
-    /* Interactive Hover Parameters */
     div.stButton > button:hover {
         background-color: #f5d77f !important;
-        color: #0E1117 !important;
-        transform: translateY(-1.5px) !important;
+        transform: translateY(-1px) !important;
         box-shadow: 0 6px 20px rgba(244, 208, 104, 0.25) !important;
     }
     
     div.stButton > button:active {
-        transform: translateY(0.5px) !important;
-        box-shadow: 0 2px 8px rgba(244, 208, 104, 0.1) !important;
+        transform: translateY(0px) !important;
     }
     
-    div.stButton > button:focus {
-        background-color: #F4D068 !important;
-        color: #0E1117 !important;
-        border: none !important;
-        box-shadow: 0 4px 12px rgba(244, 208, 104, 0.1) !important;
-    }
-    
-    /* Adjust error system notifications layouts */
-    div[data-testid="stAlert"] { margin-top: 15px !important; width: 100% !important; }
+    div[data-testid="stAlert"] { margin-top: min(1.5vh, 15px) !important; width: 100% !important; }
 
-    /* ====================================================================
-       MOBILE RESPONSIVE BREAKPOINT RULES (Viewport Widths under 480px)
-       ==================================================================== */
-    @media (max-width: 480px) {
+    /* For extremely short display heights (like landscape phones), scale back proportions */
+    @media (max-height: 580px) {
         div[data-testid="stVerticalBlock"]:has(div.login-card-anchor) {
-            padding: 30px 20px !important; 
-            width: 90% !important;
-            max-width: 90% !important;
-            margin: 0 auto !important;
+            padding: 15px 30px !important;
         }
-        .custom-login-header {
-            font-size: 19px !important; 
-        }
-        .custom-login-sub {
-            font-size: 12px !important;
-            margin-bottom: 20px !important;
-        }
-        .login-logo-container {
-            margin-bottom: 15px !important;
-        }
-        .login-logo-container img {
-            max-height: 100px !important; 
-        }
-        div.stTextInput {
-            width: 140px !important; 
-        }
-        div.stTextInput input {
-            font-size: 21px !important; 
-            letter-spacing: 4px !important;
-        }
-        div.stButton > button {
-            height: 46px !important; 
-            font-size: 13px !important;
-        }
+        .login-logo-container { margin-bottom: 5px !important; }
+        .custom-login-sub { margin-bottom: 12px !important; }
+        div.stButton { margin-top: 10px !important; }
     }
 </style>
 """, unsafe_allow_html=True)
