@@ -49,7 +49,7 @@ st.markdown("""
     /* Hide default Streamlit visual headers to keep the custom theme pristine */
     header, [data-testid="stHeader"] { visibility: hidden; height: 0px; }
 </style>
-""", unsafe_with_html=True)
+""", unsafe_allow_html=True)
 
 # ====================================================================
 # ARCHITECTURE SPLIT - INTERACTION PANEL A: GATEWAY LOGIN CONSOLE
@@ -77,12 +77,12 @@ if not st.session_state["authenticated"]:
         .login-title { font-size: 20px; font-weight: 600; color: #FFFFFF; margin-bottom: 8px; letter-spacing: 0.5px; font-family: 'Inter', sans-serif; }
         .login-subtitle { font-size: 12px; color: rgba(255, 255, 255, 0.3); margin-bottom: 24px; line-height: 1.4; font-family: 'Inter', sans-serif; }
     </style>
-    """, unsafe_with_html=True)
+    """, unsafe_allow_html=True)
     
     # Render UI Structure
-    st.markdown('<div class="login-wrapper"><div class="login-card">', unsafe_with_html=True)
-    st.markdown('<div class="login-title">Portfolio System Access</div>', unsafe_with_html=True)
-    st.markdown('<div class="login-subtitle">Enter your 4-digit master passcode key to authenticate transaction nodes.</div>', unsafe_with_html=True)
+    st.markdown('<div class="login-wrapper"><div class="login-card">', unsafe_with_html=None, unsafe_allow_html=True)
+    st.markdown('<div class="login-title">Portfolio System Access</div>', unsafe_with_html=None, unsafe_allow_html=True)
+    st.markdown('<div class="login-subtitle">Enter your 4-digit master passcode key to authenticate transaction nodes.</div>', unsafe_with_html=None, unsafe_allow_html=True)
     
     # Native Streamlit Form to manage clean state actions
     with st.form("login_form", clear_on_submit=False):
@@ -112,7 +112,7 @@ if not st.session_state["authenticated"]:
                 font-weight: 700 !important; letter-spacing: 8px !important; height: 44px !important;
             }
         </style>
-        """, unsafe_with_html=True)
+        """, unsafe_allow_html=True)
         
         submit_login = st.form_submit_button("Verify Passcode")
         
@@ -139,7 +139,7 @@ if not st.session_state["authenticated"]:
                     except Exception as err:
                         st.error(f"Network handshake failed: {str(err)}")
                         
-    st.markdown('</div></div>', unsafe_with_html=True)
+    st.markdown('</div></div>', unsafe_allow_html=True)
 
 # ====================================================================
 # ARCHITECTURE SPLIT - INTERACTION PANEL B: VERIFIED MASTER ECOSYSTEM
