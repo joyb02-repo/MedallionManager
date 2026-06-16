@@ -1,6 +1,6 @@
 # ====================================================================
 # PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
-# FILE: pages/dashboard.py (COMPLETE MONOLITH - TOTAL STABILITY FIX)
+# FILE: pages/dashboard.py (REVERTED STABLE DATA LAYER + UPGRADED REFRESH)
 # ====================================================================
 
 import streamlit as st
@@ -118,8 +118,8 @@ if not data or data.get("status") != "success":
     st.error("Data Matrix Synchronization Failure. Verify session state architecture configuration tokens.")
     st.stop()
 
-# Grab raw medallions structural payload block
-medallions_raw = data.get("medallions", {})
+# YOUR ORIGINAL WORKING DATA ASSIGNMENTS
+medallions = data.get("medallions", {})
 totals = data.get("totals", {"total_collected": 0, "total_value": 0})
 
 # Ordered array tracking matching inventory rendering maps
@@ -129,24 +129,14 @@ medallion_order = ["SPRC", "PINE", "MRNT", "BALS", "OAKW", "MAPL", "WALN", "CHER
 cols = st.columns(12)
 for idx, key in enumerate(medallion_order):
     with cols[idx]:
-        # UNIVERSAL LOOKUP HACK: Safely handle data extraction whether payload is a list or a dictionary map
-        m_info = None
-        if isinstance(medallions_raw, list):
-            m_info = next((item for item in medallions_raw if isinstance(item, dict) and any(item.get(k) == key for k in ["id", "key", "label", "code"])), None)
-        elif isinstance(medallions_raw, dict):
-            m_info = medallions_raw.get(key)
-            
-        # Fallback to default structural object properties if data search yielded nothing
-        if not m_info:
-            m_info = {"count": 0, "image": "", "label": key, "unlocked": False}
+        m_info = medallions.get(key, {"count": 0, "image": "", "label": key, "unlocked": False})
         
-        # Display rendering layout pipeline configurations
-        if m_info.get("unlocked") or m_info.get("count", 0) > 0:
+        if m_info["unlocked"] and m_info["count"] > 0:
             st.markdown(f"""
                 <div style="text-align: center; margin-bottom: 20px;">
-                    <img src="{m_info.get('image', '')}" style="width: 100%; max-width: 65px; height: auto; margin-bottom: 8px;" />
-                    <div style="color: #F4D068; font-size: 13px; font-weight: 700;">x{m_info.get('count', 0)}</div>
-                    <div style="color: rgba(255,255,255,0.6); font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">{m_info.get('label', key)}</div>
+                    <img src="{m_info['image']}" style="width: 100%; max-width: 65px; height: auto; margin-bottom: 8px;" />
+                    <div style="color: #F4D068; font-size: 13px; font-weight: 700;">x{m_info['count']}</div>
+                    <div style="color: rgba(255,255,255,0.6); font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">{m_info['label']}</div>
                 </div>
             """, unsafe_allow_html=True)
         else:
@@ -166,7 +156,7 @@ with col_metric_1:
     st.markdown(f"""
         <div style="background: #161925; border: 1px solid #23273A; border-radius: 6px; padding: 15px; text-align: center;">
             <div style="color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">Collection Value</div>
-            <div style="color: #F4D068; font-size: 24px; font-weight: 700; font-family: monospace;">${totals.get('total_value', 0):,}</div>
+            <div style="color: #F4D068; font-size: 24px; font-weight: 700; font-family: monospace;">${totals['total_value']:,}</div>
         </div>
     """, unsafe_allow_html=True)
 
@@ -174,7 +164,7 @@ with col_metric_2:
     st.markdown(f"""
         <div style="background: #161925; border: 1px solid #23273A; border-radius: 6px; padding: 15px; text-align: center;">
             <div style="color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">Medallions Collected</div>
-            <div style="color: white; font-size: 24px; font-weight: 700; font-family: monospace;">{totals.get('total_collected', 0)}</div>
+            <div style="color: white; font-size: 24px; font-weight: 700; font-family: monospace;">{totals['total_collected']}</div>
         </div>
     """, unsafe_allow_html=True)
 
