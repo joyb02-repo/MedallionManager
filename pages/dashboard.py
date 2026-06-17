@@ -1,6 +1,6 @@
 # ====================================================================
 # PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
-# FILE: pages/dashboard.py (CLEAN NATIVE EMBEDDED MODAL ENGINE)
+# FILE: pages/dashboard.py (SYNCHRONIZED ASYNC REFRESH ENGINE)
 # ====================================================================
 
 import streamlit as st
@@ -48,7 +48,11 @@ def get_image_base64(path):
             return base64.b64encode(image_file.read()).decode()
     return None
 
-# Always bypass cache checks entirely on a hard browser reload signal
+# Always clear the data cache if an active claim operation just completed
+if "just_claimed" in st.session_state and st.session_state["just_claimed"]:
+    st.cache_data.clear()
+    st.session_state["just_claimed"] = False
+
 @st.cache_data(ttl=600)
 def fetch_sheet_records(passcode):
     try:
@@ -61,11 +65,6 @@ def fetch_sheet_records(passcode):
                 return m_map, summary.get("Inventory", {}), summary.get("CollectionValue", "$0"), summary.get("MedallionsCollected", "0")
     except: pass
     return {}, {}, "$0", "0"
-
-# Clear cache immediately if the page re-renders after an intentional button execution
-if "just_claimed" in st.session_state and st.session_state["just_claimed"]:
-    st.cache_data.clear()
-    st.session_state["just_claimed"] = False
 
 live_data, live_inventory, summary_value, summary_collected = fetch_sheet_records(st.session_state["user_passcode"])
 if not str(summary_value).strip().startswith("$"):
@@ -276,7 +275,7 @@ html_base_template = """
         setTimeout(cycle, speed);
     }
 
-    // ⚡ PROMISE-BASED COMPANION ENGINE: Saves data to sheet cleanly, then reloads window instantly
+    // 🔒 COMPLETE COMPANION BLOCKING ENGAGEMENT: Halts thread execution until write is recorded
     async function commitClaimToSheets() {
         if (!selectedItem) return;
         const claimBtn = document.getElementById('claimBtn'); 
@@ -287,17 +286,17 @@ html_base_template = """
         const pingUrl = endpoint + "?action=mineMedallion&passcode=" + encodeURIComponent("__PASSCODE_RAW__") + "&item=" + encodeURIComponent(selectedItem) + "&_=" + timestamp;
         
         try {
-            // Use native fetch with 'no-cors' mode so Google Apps Script redirects execute seamlessly
-            await fetch(pingUrl, { mode: 'no-cors' });
+            // Using a text extraction layer ensures JavaScript waits for Google to fully write the cell rows
+            const response = await fetch(pingUrl);
+            await response.text(); 
             
-            // Notify Streamlit layout state handler to wipe old numbers before breaking frame
+            // Dispatch clean updates to Streamlit's structural layout canvas
             if (window.parent && window.parent.Streamlit) {
                 window.parent.Streamlit.setComponentValue("FIRE_REFRESH_" + timestamp);
             } else {
                 window.location.reload();
             }
         } catch (error) {
-            // Fallback reload handler if frame channel isolates
             window.location.reload();
         }
     }
@@ -370,10 +369,10 @@ html_elements = html_elements.replace("__API_URL_PLACEHOLDER__", API_URL)
 html_elements = html_elements.replace("__POOL_ITEMS_PLACEHOLDER__", json.dumps(js_pool_items))
 html_elements = html_elements.replace("__POOL_WEIGHTS_PLACEHOLDER__", json.dumps(js_pool_weights))
 
-# Render layout canvas
+# Render current frame
 component_sync_signal = st.components.v1.html(html_elements, height=750, scrolling=False)
 
-# Intercept the claim fetch confirmation signal to update state smoothly
+# Intercept confirmation signal to update state smoothly
 if isinstance(component_sync_signal, str) and component_sync_signal.startswith("FIRE_REFRESH_"):
     st.session_state["just_claimed"] = True
     st.cache_data.clear()
