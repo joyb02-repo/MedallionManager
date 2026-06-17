@@ -48,6 +48,11 @@ def get_image_base64(path):
             return base64.b64encode(image_file.read()).decode()
     return None
 
+# We listen for a specific component signal to clear local caches right before reading the layout data
+if "sync_trigger" in st.session_state:
+    st.cache_data.clear()
+    del st.session_state["sync_trigger"]
+
 @st.cache_data(ttl=1)
 def fetch_sheet_records(passcode):
     try:
@@ -276,15 +281,18 @@ html_base_template = """
         claimBtn.disabled = true; 
         claimBtn.innerText = "Saving...";
         
-        // Anti-cache bypass signature ensures the sheet updates live immediately
         const timestamp = new Date().getTime();
         const pingUrl = endpoint + "?action=mineMedallion&passcode=" + encodeURIComponent("__PASSCODE_RAW__") + "&item=" + encodeURIComponent(selectedItem) + "&_=" + timestamp;
         
         const imgPing = new Image();
         imgPing.onload = imgPing.onerror = function() {
             setTimeout(() => {
-                // Break out of component window frame to force parent context reload completely clean
-                window.parent.location.reload();
+                // ⚡ SEAMLESS STATE TRIGGER: Notify the backend component value structure to re-fetch variables safely without resetting the parent browser page memory
+                if (window.parent && window.parent.Streamlit) {
+                    window.parent.Streamlit.setComponentValue(timestamp);
+                } else {
+                    window.location.reload();
+                }
             }, 500);
         };
         imgPing.src = pingUrl;
@@ -358,4 +366,8 @@ html_elements = html_elements.replace("__API_URL_PLACEHOLDER__", API_URL)
 html_elements = html_elements.replace("__POOL_ITEMS_PLACEHOLDER__", json.dumps(js_pool_items))
 html_elements = html_elements.replace("__POOL_WEIGHTS_PLACEHOLDER__", json.dumps(js_pool_weights))
 
-st.components.v1.html(html_elements, height=750, scrolling=False)
+# Capture frame events inside state engine
+component_sync_signal = st.components.v1.html(html_elements, height=750, scrolling=False)
+if component_sync_signal:
+    st.session_state["sync_trigger"] = True
+    st.rerun()
