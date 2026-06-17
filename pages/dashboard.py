@@ -1,6 +1,6 @@
 # ====================================================================
 # PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
-# FILE: pages/dashboard.py (NATIVE HTML ACCORDION LAYOUT ENGINE)
+# FILE: pages/dashboard.py (FIXED NATIVE STREAMLIT LAYOUT CONTROLS)
 # ====================================================================
 
 import streamlit as st
@@ -15,18 +15,7 @@ if "authenticated" not in st.session_state or not st.session_state["authenticate
 
 st.set_page_config(page_title="Timber Medallion Portfolio", layout="wide", initial_sidebar_state="collapsed")
 
-# Handle standard query parameters for native HTML button communication redirects
-if "actuator" in st.query_params:
-    action = st.query_params["actuator"]
-    if action == "refresh":
-        st.query_params.clear()
-        st.cache_data.clear()
-        st.rerun()
-    elif action == "store":
-        st.query_params.clear()
-        st.switch_page("pages/store.py")
-
-# Clean baseline Streamlit elements out of view
+# 🎯 NATIVE COMPONENT BUTTON STYLING OVERRIDE (Forcing colors and block layout)
 st.markdown("""
 <style>
     .stApp {
@@ -37,6 +26,52 @@ st.markdown("""
     }
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; height: 0px; }
     div.block-container { padding-top: 15px !important; padding-bottom: 10px !important; max-width: 100% !important; }
+    
+    /* Center the inner column wrappers */
+    [data-testid="column"] {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    /* 🔄 UPDATE DATA BUTTON - Wide, matching original format */
+    div.stButton > button[key="sys_refresh_btn"] {
+        background-color: #161925 !important;
+        border: 1px solid #23273A !important;
+        color: #E2E8F0 !important;
+        font-weight: 500 !important;
+        border-radius: 6px !important;
+        padding: 0.45rem 1.5rem !important;
+        width: 100% !important; 
+        transition: all 0.2s ease !important;
+        margin-bottom: 4px !important;
+    }
+    div.stButton > button[key="sys_refresh_btn"]:hover {
+        background-color: #23273A !important;
+        border-color: #718096 !important;
+        color: #FFF !important;
+    }
+
+    /* 🛒 VISIT STORE BUTTON - New layout & distinct emerald accent color */
+    div.stButton > button[key="sys_route_store_btn"] {
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+        color: #FFFFFF !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        border: none !important;
+        border-radius: 6px !important;
+        padding: 0.5rem 2rem !important;
+        width: 240px !important; /* Elegant compact centered layout */
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2) !important;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        margin-bottom: 20px !important;
+    }
+    div.stButton > button[key="sys_route_store_btn"]:hover {
+        background: linear-gradient(135deg, #34D399 0%, #10B981 100%) !important;
+        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4) !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -52,6 +87,24 @@ LABEL_MAPPING = {
     "Oak": "OAKW", "Maple": "MAPL", "Walnut": "WALN", "Cherry": "CHER",
     "Mahogany": "MHGN", "Ebony": "EBNY", "Rosewood": "RSWD", "Agarwood": "AGAR"
 }
+
+# ====================================================================
+# SYSTEM BACKEND PROCESSORS - TOP LEVEL NATIVE ACTION DECK
+# ====================================================================
+
+# We use 3 structural layout grids to guarantee the dynamic controls lock onto the absolute screen center
+left_track, center_deck, right_track = st.columns([1, 10, 1])
+
+with center_deck:
+    # Button 1: Stretches perfectly to full center window dimensions
+    if st.button("Update Data 🔄", key="sys_refresh_btn"):
+        st.cache_data.clear()
+        st.rerun()
+        
+    # Button 2: Positioned directly underneath and locked to a centered width of 240px
+    if st.button("Visit Store 🛒", key="sys_route_store_btn"):
+        st.switch_page("pages/store.py")
+
 
 def get_image_base64(path):
     if os.path.exists(path):
@@ -98,58 +151,8 @@ for wood_name in MEDALLION_COLUMNS:
 html_base_template = """
 <style>
     body { margin: 0; padding: 10px 0 0 0; background: transparent; font-family: 'Inter', sans-serif; position: relative; }
-    
-    /* 🛠️ TOP UTILITY CONTROLS: Perfectly aligned, styled, and stacked on center vertical axis */
-    .navigation-deck { display: flex; flex-direction: column; align-items: center; width: 100%; margin-bottom: 25px; gap: 10px; }
-    
-    .native-update-btn {
-        background-color: #161925;
-        border: 1px solid #23273A;
-        color: #E2E8F0;
-        font-family: 'Inter', sans-serif;
-        font-size: 14px;
-        font-weight: 500;
-        border-radius: 6px;
-        padding: 10px 0;
-        width: 100%;
-        max-width: 1200px; /* Spans cleanly across the layout container boundaries */
-        cursor: pointer;
-        transition: all 0.2s ease;
-        text-align: center;
-    }
-    .native-update-btn:hover {
-        background-color: #23273A;
-        border-color: #718096;
-        color: #FFFFFF;
-    }
-
-    .native-store-btn {
-        background: linear-gradient(135deg, #10B981 0%, #059669 100%); /* Fresh Emerald Premium Color Theme */
-        border: none;
-        color: #FFFFFF;
-        font-family: 'Inter', sans-serif;
-        font-size: 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        border-radius: 6px;
-        padding: 8px 0;
-        width: 240px; /* Explicitly centered card dimension width */
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        text-align: center;
-    }
-    .native-store-btn:hover {
-        background: linear-gradient(135deg, #34D399 0%, #10B981 100%);
-        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
-        transform: translateY(-1px);
-    }
-    .native-store-btn:active {
-        transform: translateY(0);
-    }
-
     .header-wrapper { position: relative; max-width: 100%; margin: 0 auto; padding: 0 15px; text-align: center; }
+    
     .portfolio-title { font-size: 24px; font-weight: 600; color: #FFFFFF; margin-bottom: 8px; }
     .portfolio-title span.user-accent { color: #F4D068; }
     .portfolio-intro { max-width: 850px; margin: 0 auto 35px auto; font-size: 13px; line-height: 1.6; color: rgba(255, 255, 255, 0.35); }
@@ -207,11 +210,6 @@ html_base_template = """
     .claim-button:hover { background-color: #F4D068; color: #0E1117; }
 </style>
 
-<div class="navigation-deck">
-    <button class="native-update-btn" onclick="triggerActuator('refresh')">Update Data 🔄</button>
-    <button class="native-store-btn" onclick="triggerActuator('store')">Visit Store 🛒</button>
-</div>
-
 <div class="header-wrapper">
     <div class="portfolio-title">Timber Medallion Portfolio: <span class="user-accent">__USERNAME_UPPER__</span></div>
     <div class="portfolio-intro">
@@ -251,13 +249,6 @@ html_base_template = """
     const weights = __POOL_WEIGHTS_PLACEHOLDER__;
     const endpoint = "__API_URL_PLACEHOLDER__";
     let selectedItem = "";
-
-    function triggerActuator(actionKey) {
-        // Formulates a URL state parameters reload that Streamlit routes dynamically
-        const currentUrl = new URL(window.parent.location.href);
-        currentUrl.searchParams.set("actuator", actionKey);
-        window.parent.location.href = currentUrl.toString();
-    }
 
     async function evaluatePinAuthorization() {
         const pinValue = document.getElementById("pinField").value.trim();
@@ -322,7 +313,10 @@ html_base_template = """
         const imgPing = new Image();
         imgPing.onload = imgPing.onerror = function() {
             setTimeout(() => {
-                triggerActuator('refresh');
+                const parentDoc = window.parent.document;
+                const refreshActuator = Array.from(parentDoc.querySelectorAll('button')).find(el => el.innerText.includes('Update Data 🔄'));
+                if (refreshActuator) refreshActuator.click();
+                else window.location.reload();
             }, 500);
         };
         imgPing.src = pingUrl;
@@ -396,4 +390,4 @@ html_elements = html_elements.replace("__API_URL_PLACEHOLDER__", API_URL)
 html_elements = html_elements.replace("__POOL_ITEMS_PLACEHOLDER__", json.dumps(js_pool_items))
 html_elements = html_elements.replace("__POOL_WEIGHTS_PLACEHOLDER__", json.dumps(js_pool_weights))
 
-st.components.v1.html(html_elements, height=960, scrolling=False)
+st.components.v1.html(html_elements, height=900, scrolling=False)
