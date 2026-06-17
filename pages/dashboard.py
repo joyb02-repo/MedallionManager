@@ -14,13 +14,38 @@ API_URL = st.secrets["API_URL"]
 MEDALLION_COLUMNS = ["Spruce", "Pine", "Meranti", "Balsa", "Oak", "Maple", "Walnut", "Cherry", "Mahogany", "Ebony", "Rosewood", "Agarwood"]
 LABEL_MAPPING = {"Spruce": "SPRC", "Pine": "PINE", "Meranti": "MRNT", "Balsa": "BALS", "Oak": "OAKW", "Maple": "MAPL", "Walnut": "WALN", "Cherry": "CHER", "Mahogany": "MHGN", "Ebony": "EBNY", "Rosewood": "RSWD", "Agarwood": "AGAR"}
 
-# Custom layout and styling rules
+# Custom layout and hidden system parameters
 st.markdown("""
 <style>
     .stApp { background-color: #0E1117; color: white; }
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; }
+    
+    /* Hide the silent iframe data transfer bridge text input element */
+    div.element-container:has(input[aria-label="system_sink"]) { display: none !important; height: 0px !important; }
 </style>
 """, unsafe_allow_html=True)
+
+# NATIVE TOP HEADER ROW WITH LOGOUT ACTUATOR
+col_title, col_logout = st.columns([9, 1.2])
+with col_title:
+    st.markdown(f"<h2 style='margin:0; font-weight:600;'>Timber Medallion Portfolio: <span style='color:#F4D068;'>{st.session_state['username'].upper()}</span></h2>", unsafe_allow_html=True)
+    st.markdown("<p style='color:rgba(255,255,255,0.3); margin-top:4px;'>Master tracking dashboard powered directly by cloud inventory records.</p>", unsafe_allow_html=True)
+with col_logout:
+    if st.button("🔓 LOGOUT", use_container_width=True):
+        st.session_state["authenticated"] = False
+        st.session_state["user_passcode"] = ""
+        st.session_state["username"] = "Guest"
+        st.switch_page("login.py")
+
+st.markdown("---")
+
+# Invisible system parameters bridge used to listen to iframe claims
+claim_catch = st.text_input("system_sink", key="system_sink", label_visibility="collapsed")
+if claim_catch and claim_catch.startswith("CLAIM:"):
+    mined_item = claim_catch.split(":")[1]
+    st.cache_data.clear()  # Drop cached reports forcing immediate spreadsheet reload 
+    st.session_state["system_sink"] = ""
+    st.rerun()
 
 def get_image_base64(path):
     if os.path.exists(path):
@@ -64,7 +89,7 @@ html_base_template = """
     .quantity-badge { font-size: 12px; font-weight: 700; color: #F4D068; margin-bottom: 3px; min-height: 15px; }
     .label-badge { font-size: 10px; font-weight: 700; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; }
     
-    /* TOOLTIP DEFINITION */
+    /* TOOLTIP DEFINITION: Completely safe from logout overlap overlay bugs */
     .node-tooltip { visibility: hidden; opacity: 0; position: absolute; top: -120px; left: 50%; transform: translateX(-50%); width: 180px; background: #161925; border: 1px solid #282E48; border-radius: 8px; padding: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); z-index: 99999; transition: opacity 0.12s ease-in-out; pointer-events: none; }
     .grid-node:hover .node-tooltip { visibility: visible; opacity: 1; }
     .grid-node:first-child .node-tooltip { left: 0; transform: translateX(0); }
@@ -162,30 +187,21 @@ html_base_template = """
         setTimeout(cycle, speed);
     }
 
-    // ⚡ CHATGPT SECURE FETCH & REFRESH ENGINE RECONCILIATION
-    async function commitClaimToSheets() {
-        if (!selectedItem) return;
-        const claimBtn = document.getElementById('claimBtn'); 
-        claimBtn.disabled = true; 
-        claimBtn.innerText = "Saving...";
-        
+    function commitClaimToSheets() {
+        const claimBtn = document.getElementById('claimBtn'); claimBtn.disabled = true; claimBtn.innerText = "Saving...";
         const pingUrl = endpoint + "?action=mineMedallion&passcode=" + encodeURIComponent("__PASSCODE_RAW__") + "&item=" + encodeURIComponent(selectedItem);
         
-        try {
-            const response = await fetch(pingUrl);
-            const result = await response.json();
-            
-            // If the sheet successfully writes, force top window context to refresh instantly
-            if (result.status === "success" || result.status === "ok") {
-                window.top.location.reload();
-            } else {
-                claimBtn.innerText = "Error Saving";
-                claimBtn.disabled = false;
+        const imgPing = new Image();
+        imgPing.onload = imgPing.onerror = function() {
+            // Write to the native text field inside parent window, forcing instant reload hook sync loop
+            const streamlitDoc = window.parent.document;
+            const targetInput = Array.from(streamlitDoc.querySelectorAll('input')).find(el => el.getAttribute('aria-label') === 'system_sink');
+            if(targetInput) {
+                targetInput.value = "CLAIM:" + selectedItem;
+                targetInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
-        } catch (err) {
-            // Backup fallback: if response format throws a JSON parse error but request succeeded
-            window.top.location.reload();
-        }
+        };
+        imgPing.src = pingUrl;
     }
 </script>
 """
