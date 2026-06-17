@@ -54,7 +54,7 @@ asset_map_js += "}"
 
 html_base_template = """
 <style>
-    body { margin: 0; padding: 0; background: transparent; font-family: 'Inter', system-ui, sans-serif; }
+    body { margin: 0; padding: 0; background: transparent; font-family: 'Inter', system-ui, sans-serif; overflow-x: hidden; }
     .casement-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; margin-bottom: 30px; }
     .grid-node { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
     .image-frame { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
@@ -78,13 +78,13 @@ html_base_template = """
     .stat-label { font-size: 11px; text-transform: uppercase; color: #718096; margin-bottom: 4px; }
     .stat-value { font-size: 18px; font-weight: 700; color: #FFF; }
     
-    .action-container { display: flex; flex-direction: column; align-items: center; width: 100%; }
-    .pin-auth-wrapper { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; }
-    .pin-input { width: 150px; height: 38px; background: #161925; border: 1px solid #23273A; border-radius: 6px; color: #FFF; text-align: center; font-size: 14px; font-weight: 600; outline: none; }
+    .action-container { display: flex; flex-direction: column; align-items: center; width: 100%; box-sizing: border-box; }
+    .pin-auth-wrapper { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; width: 100%; max-width: 424px; }
+    .pin-input { width: 150px; height: 38px; background: #161925; border: 1px solid #23273A; border-radius: 6px; color: #FFF; text-align: center; font-size: 14px; font-weight: 600; outline: none; flex-grow: 1; }
     .pin-verify-btn { padding: 0 16px; height: 38px; background: #23273A; border: none; border-radius: 6px; color: #E2E8F0; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; }
     .pin-feedback-msg { font-size: 11px; font-weight: 600; margin-bottom: 10px; height: 14px; }
     
-    .mine-button { width: 424px; height: 46px; background-color: #F4D068; border: none; border-radius: 6px; color: #0E1117; font-size: 14px; font-weight: 700; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 15px rgba(244, 208, 104, 0.2); }
+    .mine-button { width: 424px; max-width: 100%; height: 46px; background-color: #F4D068; border: none; border-radius: 6px; color: #0E1117; font-size: 14px; font-weight: 700; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 15px rgba(244, 208, 104, 0.2); }
     .mine-button:disabled { opacity: 0.35; cursor: not-allowed; background-color: #161925 !important; color: #3D4563 !important; border: 1px solid #23273A; box-shadow: none !important; }
     
     .animation-display { margin-top: 20px; height: 240px; display: flex; flex-direction: column; align-items: center; }
@@ -95,9 +95,27 @@ html_base_template = """
     .claim-button { width: 160px; height: 32px; background-color: transparent; border: 2px solid #F4D068; border-radius: 4px; color: #F4D068; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; opacity: 0; transform: translateY(5px); transition: all 0.2s; }
     .claim-button.visible { opacity: 1; transform: translateY(0); }
     .claim-button:hover { background-color: #F4D068; color: #0E1117; }
+
+    /* RESPONSIVE LOGIC FOR MOBILE PHONE SUPPORT ONLY */
+    .mobile-dropdown-container { display: none; width: 100%; max-width: 424px; margin-bottom: 25px; box-sizing: border-box; }
+    .mobile-select-menu { width: 100%; height: 42px; background: #161925; border: 1px solid #23273A; border-radius: 6px; color: #FFF; padding: 0 12px; font-size: 13px; font-weight: 600; outline: none; cursor: pointer; }
+
+    @media (max-width: 768px) {
+        .casement-grid { display: none !important; }
+        .mobile-dropdown-container { display: block !important; }
+        .dashboard-row { width: 100%; max-width: 424px; gap: 10px; }
+        .stat-card { min-width: 0 !important; flex: 1; }
+    }
 </style>
 
 <div class="casement-grid">__GRID_ITEMS_PLACEHOLDER__</div>
+
+<div class="mobile-dropdown-container">
+    <select class="mobile-select-menu" onchange="if(this.value) alert(this.value)">
+        <option value="">▼ VIEW MEDALLION COLLECTION DETAILS</option>
+        __DROPDOWN_ITEMS_PLACEHOLDER__
+    </select>
+</div>
 
 <div class="dashboard-row">
     <div class="stat-card"><div class="stat-label">Collection Value</div><div class="stat-value">__VALUE_PLACEHOLDER__</div></div>
@@ -176,6 +194,8 @@ html_base_template = """
 """
 
 grid_elements_html = ""
+dropdown_elements_html = ""
+
 for wood_name in MEDALLION_COLUMNS:
     display_label = LABEL_MAPPING.get(wood_name, wood_name[:4].upper())
     lookup_key = wood_name.strip().lower()
@@ -191,6 +211,8 @@ for wood_name in MEDALLION_COLUMNS:
         except: pass
 
     img_b64 = get_image_base64(f"assets/{wood_name.lower()}.png")
+    
+    # 1. Base desktop grid node HTML parsing matching original syntax
     grid_elements_html += f"""
     <div class="grid-node">
         <div class="node-tooltip">
@@ -208,7 +230,16 @@ for wood_name in MEDALLION_COLUMNS:
     </div>
     """
 
+    # 2. Dropdown elements parsed cleanly from raw row variables
+    lock_label_status = f" [Owned: x{owned}]" if owned > 0 else " [🔒 Locked]"
+    dropdown_elements_html += f"""
+    <option value="{wood_name} ({display_label})&#10;Rarity: {rarity}&#10;Value: {value}&#10;Left: {availability}&#10;Chance: {probability}">
+        {wood_name} ({display_label}){lock_label_status}
+    </option>
+    """
+
 html_elements = html_base_template.replace("__GRID_ITEMS_PLACEHOLDER__", grid_elements_html)
+html_elements = html_elements.replace("__DROPDOWN_ITEMS_PLACEHOLDER__", dropdown_elements_html)
 html_elements = html_elements.replace("__VALUE_PLACEHOLDER__", summary_value)
 html_elements = html_elements.replace("__COLLECTED_PLACEHOLDER__", summary_collected)
 html_elements = html_elements.replace("__ASSET_MAP_PLACEHOLDER__", asset_map_js)
