@@ -48,10 +48,7 @@ def get_image_base64(path):
             return base64.b64encode(image_file.read()).decode()
     return None
 
-# Initialize persistent tracker to identify explicit button click keys
-if "last_processed_claim" not in st.session_state:
-    st.session_state["last_processed_claim"] = ""
-
+# Always bypass cache checks entirely on a hard browser reload signal
 @st.cache_data(ttl=600)
 def fetch_sheet_records(passcode):
     try:
@@ -64,6 +61,11 @@ def fetch_sheet_records(passcode):
                 return m_map, summary.get("Inventory", {}), summary.get("CollectionValue", "$0"), summary.get("MedallionsCollected", "0")
     except: pass
     return {}, {}, "$0", "0"
+
+# Clear cache immediately if the page re-renders after an intentional button execution
+if "just_claimed" in st.session_state and st.session_state["just_claimed"]:
+    st.cache_data.clear()
+    st.session_state["just_claimed"] = False
 
 live_data, live_inventory, summary_value, summary_collected = fetch_sheet_records(st.session_state["user_passcode"])
 if not str(summary_value).strip().startswith("$"):
@@ -274,7 +276,8 @@ html_base_template = """
         setTimeout(cycle, speed);
     }
 
-    function commitClaimToSheets() {
+    // ⚡ PROMISE-BASED COMPANION ENGINE: Saves data to sheet cleanly, then reloads window instantly
+    async function commitClaimToSheets() {
         if (!selectedItem) return;
         const claimBtn = document.getElementById('claimBtn'); 
         claimBtn.disabled = true; 
@@ -283,16 +286,20 @@ html_base_template = """
         const timestamp = new Date().getTime();
         const pingUrl = endpoint + "?action=mineMedallion&passcode=" + encodeURIComponent("__PASSCODE_RAW__") + "&item=" + encodeURIComponent(selectedItem) + "&_=" + timestamp;
         
-        const imgPing = new Image();
-        imgPing.onload = imgPing.onerror = function() {
-            setTimeout(() => {
-                if (window.parent && window.parent.Streamlit) {
-                    // Send an explicit command format signature to eliminate initialization loop triggers
-                    window.parent.Streamlit.setComponentValue("CLAIMED_" + timestamp);
-                }
-            }, 500);
-        };
-        imgPing.src = pingUrl;
+        try {
+            // Use native fetch with 'no-cors' mode so Google Apps Script redirects execute seamlessly
+            await fetch(pingUrl, { mode: 'no-cors' });
+            
+            // Notify Streamlit layout state handler to wipe old numbers before breaking frame
+            if (window.parent && window.parent.Streamlit) {
+                window.parent.Streamlit.setComponentValue("FIRE_REFRESH_" + timestamp);
+            } else {
+                window.location.reload();
+            }
+        } catch (error) {
+            // Fallback reload handler if frame channel isolates
+            window.location.reload();
+        }
     }
 </script>
 """
@@ -363,12 +370,11 @@ html_elements = html_elements.replace("__API_URL_PLACEHOLDER__", API_URL)
 html_elements = html_elements.replace("__POOL_ITEMS_PLACEHOLDER__", json.dumps(js_pool_items))
 html_elements = html_elements.replace("__POOL_WEIGHTS_PLACEHOLDER__", json.dumps(js_pool_weights))
 
-# Render component layout
+# Render layout canvas
 component_sync_signal = st.components.v1.html(html_elements, height=750, scrolling=False)
 
-# Validate that the token is a string and explicitly contains our verified prefix token
-if isinstance(component_sync_signal, str) and component_sync_signal.startswith("CLAIMED_"):
-    if component_sync_signal != st.session_state["last_processed_claim"]:
-        st.session_state["last_processed_claim"] = component_sync_signal
-        st.cache_data.clear()
-        st.rerun()
+# Intercept the claim fetch confirmation signal to update state smoothly
+if isinstance(component_sync_signal, str) and component_sync_signal.startswith("FIRE_REFRESH_"):
+    st.session_state["just_claimed"] = True
+    st.cache_data.clear()
+    st.rerun()
