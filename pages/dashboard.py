@@ -25,7 +25,9 @@ st.markdown("""
         background-size: 24px 24px;
     }
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; height: 0px; }
-    div.block-container { padding-top: 15px !important; padding-bottom: 10px !important; max-width: 100% !important; }
+    
+    /* Fixed container bounding rules */
+    div.block-container { padding-top: 20px !important; padding-bottom: 20px !important; }
     
     /* 🛠️ ROW SPLIT SYSTEM: Packs parent structural blocks into a space-between flex row layout */
     [data-testid="stVerticalBlock"] > div:has(div button[key="sys_refresh_btn"]) {
@@ -35,7 +37,6 @@ st.markdown("""
         justify-content: space-between !important;
         align-items: center !important;
         margin: 0 auto !important;
-        padding: 0 15px !important;
         box-sizing: border-box !important;
     }
 
@@ -83,20 +84,10 @@ st.markdown("""
         background: linear-gradient(135deg, #34D399 0%, #10B981 100%) !important;
         box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4) !important;
     }
-
-    /* Streamlit frame adjustments for responsive scales */
-    iframe[title="st.components.v1.html"] {
-        width: 100% !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
-# Armored secret parsing protection
-try:
-    API_URL = st.secrets["API_URL"]
-except Exception as e:
-    st.error(f"Configuration Critical Failure: 'API_URL' is missing from secrets.toml setup.")
-    st.stop()
+API_URL = st.secrets["API_URL"]
 
 MEDALLION_COLUMNS = [
     "Spruce", "Pine", "Meranti", "Balsa", "Oak", "Maple", 
@@ -137,20 +128,13 @@ def fetch_sheet_records(passcode):
                 m_map = {str(m.get("Medallion", "")).strip().lower(): m for m in d.get("medallions", [])}
                 summary = d.get("master_summary", {})
                 return m_map, summary.get("Inventory", {}), summary.get("CollectionValue", "$0"), summary.get("MedallionsCollected", "0")
-            else:
-                st.warning(f"API Engine Error Notice: {d.get('message', 'Unknown status failure response.')}")
-        else:
-            st.error(f"HTTP Connection Blocked: Endpoint returned status code {r.status_code}")
-    except Exception as network_error: 
-        st.error(f"Live Sheet Sync Error: {str(network_error)}")
+    except: pass
     return {}, {}, "$0", "0"
 
-# Fetch records using session state safely with fallback assignments
 user_passcode = st.session_state.get("user_passcode", "DEFAULT_DEMO_KEY")
 username_display = st.session_state.get("username", "OPERATOR").upper()
 
 live_data, live_inventory, summary_value, summary_collected = fetch_sheet_records(user_passcode)
-
 if not str(summary_value).strip().startswith("$"):
     summary_value = f"${str(summary_value).strip()}"
 
@@ -175,15 +159,15 @@ for wood_name in MEDALLION_COLUMNS:
 
 html_base_template = """
 <style>
-    body { margin: 0; padding: 10px 0 0 0; background: transparent; font-family: 'Inter', sans-serif; position: relative; }
-    .header-wrapper { position: relative; max-width: 100%; margin: 0 auto; padding: 0 15px; text-align: center; }
+    body { margin: 0; padding: 0; background: transparent; font-family: 'Inter', sans-serif; color: #FFFFFF; }
+    .header-wrapper { width: 100%; text-align: center; margin-bottom: 25px; box-sizing: border-box; }
     
-    .portfolio-title { font-size: 24px; font-weight: 600; color: #FFFFFF; margin-bottom: 8px; }
+    .portfolio-title { font-size: 26px; font-weight: 700; color: #FFFFFF; margin-bottom: 10px; letter-spacing: -0.5px; }
     .portfolio-title span.user-accent { color: #F4D068; }
-    .portfolio-intro { max-width: 850px; margin: 0 auto 35px auto; font-size: 13px; line-height: 1.6; color: rgba(255, 255, 255, 0.35); }
-    .portfolio-intro span { color: rgba(244, 208, 104, 0.8); font-weight: 600; }
+    .portfolio-intro { max-width: 850px; margin: 0 auto; font-size: 13.5px; line-height: 1.6; color: rgba(255, 255, 255, 0.4); }
+    .portfolio-intro span { color: rgba(244, 208, 104, 0.9); font-weight: 600; }
     
-    .casement-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; padding: 0 15px; margin-top: 10px; }
+    .casement-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; margin-bottom: 30px; width: 100%; box-sizing: border-box; }
     .grid-node { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
     .image-frame { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
     .image-frame img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.15s ease-in-out; }
@@ -192,7 +176,6 @@ html_base_template = """
     .quantity-badge { font-size: 12px; font-weight: 700; color: #F4D068; margin-bottom: 3px; min-height: 15px; }
     .label-badge { font-size: 10px; font-weight: 700; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; }
     
-    /* 🛠️ HOVER TEXT STRUCTURAL SYSTEM */
     .node-tooltip { 
         visibility: hidden; opacity: 0; position: absolute; top: -115px; left: 50%; 
         transform: translateX(-50%); width: 150px; background: #161925; border: 1px solid #282E48; 
@@ -200,8 +183,6 @@ html_base_template = """
         z-index: 9999999 !important; transition: opacity 0.12s ease-in-out; pointer-events: none; 
     }
     .grid-node:hover .node-tooltip { visibility: visible; opacity: 1; }
-    .grid-node:first-child .node-tooltip { left: 0; transform: translateX(0); }
-    .grid-node:last-child .node-tooltip { left: auto; right: 0; transform: translateX(0); }
     
     .tip-line { font-size: 11px; color: #E2E8F0; margin-bottom: 4px; text-align: left; white-space: nowrap; }
     .tip-line span { font-weight: 700; color: #F4D068; }
@@ -211,53 +192,29 @@ html_base_template = """
     .tip-line span.rarity-epic { color: #a855f7; }         
     .tip-line span.rarity-legendary { color: #f59e0b; }    
     
-    .dashboard-row { display: flex; justify-content: center; gap: 20px; margin-top: 30px; padding: 0 15px; }
-    .stat-card { background: #161925; border: 1px solid #23273A; border-radius: 6px; padding: 10px 20px; min-width: 180px; text-align: center; }
-    .stat-label { font-size: 11px; text-transform: uppercase; color: #718096; margin-bottom: 4px; }
-    .stat-value { font-size: 18px; font-weight: 700; color: #F4D068; }
+    .dashboard-row { display: flex; justify-content: center; gap: 20px; margin-bottom: 35px; }
+    .stat-card { background: #161925; border: 1px solid #23273A; border-radius: 6px; padding: 12px 24px; min-width: 190px; text-align: center; }
+    .stat-label { font-size: 11px; text-transform: uppercase; color: #718096; margin-bottom: 4px; letter-spacing: 0.5px; }
+    .stat-value { font-size: 20px; font-weight: 700; color: #F4D068; }
     
-    .action-container { display: flex; flex-direction: column; align-items: center; margin-top: 25px; width: 100%; box-sizing: border-box; padding: 0 15px; }
-    .pin-auth-wrapper { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; width: 100%; max-width: 424px; }
-    .pin-input { width: 150px; height: 38px; background: #161925; border: 1px solid #23273A; border-radius: 6px; color: #FFF; text-align: center; font-size: 14px; font-weight: 600; outline: none; flex-grow: 1; }
-    .pin-verify-btn { padding: 0 16px; height: 38px; background: #23273A; border: none; border-radius: 6px; color: #E2E8F0; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
+    .action-container { display: flex; flex-direction: column; align-items: center; width: 100%; }
+    .pin-auth-wrapper { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; }
+    .pin-input { width: 160px; height: 40px; background: #161925; border: 1px solid #23273A; border-radius: 6px; color: #FFF; text-align: center; font-size: 14px; font-weight: 600; outline: none; }
+    .pin-verify-btn { padding: 0 20px; height: 40px; background: #23273A; border: none; border-radius: 6px; color: #E2E8F0; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; }
     .pin-feedback-msg { font-size: 11px; font-weight: 600; margin-bottom: 10px; height: 14px; }
     
-    .mine-button { width: 424px; max-width: 100%; height: 46px; background-color: #F4D068; border: none; border-radius: 6px; color: #0E1117; font-size: 14px; font-weight: 700; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 15px rgba(244, 208, 104, 0.2); }
+    .mine-button { width: 424px; height: 48px; background-color: #F4D068; border: none; border-radius: 6px; color: #0E1117; font-size: 14px; font-weight: 700; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 15px rgba(244, 208, 104, 0.2); }
     .mine-button:disabled { opacity: 0.35; cursor: not-allowed; background-color: #161925 !important; color: #3D4563 !important; border: 1px solid #23273A; box-shadow: none !important; }
 
-    /* 🎴 COMPACT OVERLAY DIALOG SYSTEM */
-    .modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(14, 17, 23, 0.85); backdrop-filter: blur(4px);
-        display: none; align-items: flex-start; justify-content: center; z-index: 999999;
-        padding-top: 60px; box-sizing: border-box;
-    }
-    .modal-box {
-        background: #0E1117; border: 1px solid #23273A; border-radius: 12px;
-        width: 320px; padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.7);
-        display: flex; flex-direction: column; align-items: center; text-align: center;
-        position: relative;
-    }
-    .modal-subheading {
-        font-size: 13px; font-weight: 500; color: rgba(255, 255, 255, 0.6);
-        letter-spacing: 0.5px; margin-bottom: 16px; text-transform: none;
-    }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(14, 17, 23, 0.85); backdrop-filter: blur(4px); display: none; align-items: flex-start; justify-content: center; z-index: 999999; padding-top: 60px; }
+    .modal-box { background: #0E1117; border: 1px solid #23273A; border-radius: 12px; width: 320px; padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.7); display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .modal-subheading { font-size: 13px; font-weight: 500; color: rgba(255, 255, 255, 0.6); margin-bottom: 16px; }
     .spin-box { width: 140px; height: 140px; border-radius: 12px; background: #161925; border: 3px solid #23273A; display: flex; align-items: center; justify-content: center; }
     .spin-box img { width: 88%; height: 88%; object-fit: contain; }
-    .outcome-text-wrapper { margin-top: 15px; height: 35px; text-align: center; opacity: 0; transition: opacity 0.2s ease; }
+    .outcome-text-wrapper { margin-top: 15px; height: 35px; opacity: 0; }
     .outcome-bottom { font-size: 18px; font-weight: 800; color: #F4D068; }
-    
-    .claim-button { margin-top: 14px; width: 160px; height: 32px; background-color: transparent; border: 2px solid #F4D068; border-radius: 4px; color: #F4D068; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; opacity: 0; transform: translateY(5px); transition: all 0.2s; display: inline-block; }
+    .claim-button { margin-top: 14px; width: 160px; height: 32px; background-color: transparent; border: 2px solid #F4D068; border-radius: 4px; color: #F4D068; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; opacity: 0; transform: translateY(5px); }
     .claim-button.visible { opacity: 1 !important; transform: translateY(0) !important; }
-    .claim-button:hover { background-color: #F4D068; color: #0E1117; }
-
-    /* 📱 RESPONSIVE SMOOTH BREAKPOINTS */
-    @media (max-width: 1024px) {
-        .casement-grid { grid-template-columns: repeat(6, 1fr); gap: 10px; }
-    }
-    @media (max-width: 600px) {
-        .casement-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    }
 </style>
 
 <div class="header-wrapper">
@@ -280,7 +237,6 @@ html_base_template = """
         <button class="pin-verify-btn" id="verifyBtn" onclick="evaluatePinAuthorization()">Verify PIN</button>
     </div>
     <div class="pin-feedback-msg" id="feedbackMsg" style="color: #718096;"></div>
-
     <button class="mine-button" id="mineBtn" disabled onclick="openMiningModal()">Mine a Medallion</button>
 </div>
 
@@ -308,7 +264,6 @@ html_base_template = """
         const feedback = document.getElementById("feedbackMsg");
         const verifyBtn = document.getElementById("verifyBtn");
         if (pinValue.length < 4) return;
-        
         try {
             const response = await fetch(endpoint + "?action=verifyPin&pin=" + encodeURIComponent(pinValue));
             const result = await response.json();
@@ -343,13 +298,10 @@ html_base_template = """
         const wrapper = document.getElementById('outcomeWrapper'); 
         const itemTxt = document.getElementById('itemNameTxt'); 
         const claimBtn = document.getElementById('claimBtn');
-        
         wrapper.style.opacity = "0"; 
         claimBtn.classList.remove('visible');
-        
         let counter = 0; let speed = 40; 
         selectedItem = selectWeightedWinner(pool, weights);
-        
         function cycle() {
             const currentItem = pool[counter % pool.length]; 
             if (assetLibrary[currentItem]) img.src = assetLibrary[currentItem]; 
@@ -371,7 +323,6 @@ html_base_template = """
         if (!selectedItem) return;
         const claimBtn = document.getElementById('claimBtn'); claimBtn.disabled = true; claimBtn.innerText = "Saving...";
         const pingUrl = endpoint + "?action=mineMedallion&passcode=" + encodeURIComponent("__PASSCODE_RAW__") + "&item=" + encodeURIComponent(selectedItem);
-        
         const imgPing = new Image();
         imgPing.onload = imgPing.onerror = function() {
             setTimeout(() => {
@@ -452,4 +403,5 @@ html_elements = html_elements.replace("__API_URL_PLACEHOLDER__", API_URL)
 html_elements = html_elements.replace("__POOL_ITEMS_PLACEHOLDER__", json.dumps(js_pool_items))
 html_elements = html_elements.replace("__POOL_WEIGHTS_PLACEHOLDER__", json.dumps(js_pool_weights))
 
-st.components.v1.html(html_elements, height=750, scrolling=False)
+# 🛠️ Re-introduced clear display constraints for Streamlit to prevent 0px collapses
+st.components.v1.html(html_elements, height=750, scrolling=True)
