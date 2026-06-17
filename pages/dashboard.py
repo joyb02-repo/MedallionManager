@@ -1,6 +1,6 @@
 # ====================================================================
 # PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
-# FILE: pages/dashboard.py (EXACT VISUAL SPECIFICATION PARSING)
+# FILE: pages/dashboard.py (HYBRID STEP-LOCKED MODAL ENGINE)
 # ====================================================================
 
 import streamlit as st
@@ -15,7 +15,11 @@ if "authenticated" not in st.session_state or not st.session_state["authenticate
 
 st.set_page_config(page_title="Timber Medallion Portfolio", layout="wide", initial_sidebar_state="collapsed")
 
-# 🎯 ORIGINAL VISUAL ENGINE: Kept exactly intact to preserve perfect design specs
+# Initialize PIN access state memory across app reruns
+if "pin_authorized" not in st.session_state:
+    st.session_state["pin_authorized"] = False
+
+# 🎯 ORIGINAL VISUAL ENGINE: Preserved completely to prevent any styling shifts
 st.markdown("""
 <style>
     .stApp {
@@ -27,7 +31,7 @@ st.markdown("""
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; height: 0px; }
     div.block-container { padding-top: 15px !important; padding-bottom: 10px !important; max-width: 100% !important; }
     
-    /* 🛠️ ROW SPLIT SYSTEM: Splits main utility actions perfectly on a single level line */
+    /* 🛠️ ROW SPLIT SYSTEM: Splits main utility actions perfectly on opposite sides */
     [data-testid="stVerticalBlock"] > div:has(div button[key="sys_refresh_btn"]) {
         width: 100% !important;
         display: flex !important;
@@ -45,7 +49,7 @@ st.markdown("""
         width: auto !important;
     }
 
-    /* 🔄 UPDATE DATA BUTTON - Original specifications restored */
+    /* 🔄 UPDATE DATA BUTTON */
     div.stButton > button[key="sys_refresh_btn"] {
         background-color: #161925 !important;
         border: 1px solid #23273A !important;
@@ -63,7 +67,7 @@ st.markdown("""
         color: #FFF !important;
     }
 
-    /* 🛒 VISIT STORE BUTTON - Original gorgeous emerald layout restored */
+    /* 🛒 VISIT STORE BUTTON */
     div.stButton > button[key="sys_route_store_btn"] {
         background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
         color: #FFFFFF !important;
@@ -83,7 +87,7 @@ st.markdown("""
         box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4) !important;
     }
 
-    /* Custom sizing override framework specifically targeting dialog frames */
+    /* Target pop-up container styling context to match original dark workspace specs */
     div[data-testid="stDialog"] {
         background-color: #0E1117 !important;
         border: 1px solid #23273A !important;
@@ -105,7 +109,7 @@ LABEL_MAPPING = {
 }
 
 # ====================================================================
-# TOP-LEVEL NAVIGATION ROW ACTIONS
+# MAIN PAGE ROUTING / REFRESH ENGINES
 # ====================================================================
 
 if st.button("Update Data 🔄", key="sys_refresh_btn"):
@@ -158,7 +162,10 @@ for wood_name in MEDALLION_COLUMNS:
     js_pool_items.append(wood_name)
     js_pool_weights.append(weight_value)
 
-# The core portfolio base UI structure template
+# ====================================================================
+# MAIN DASHBOARD VISUAL GRID ASSEMBLY
+# ====================================================================
+
 html_base_template = """
 <style>
     body { margin: 0; padding: 10px 0 0 0; background: transparent; font-family: 'Inter', sans-serif; position: relative; }
@@ -200,6 +207,12 @@ html_base_template = """
     .stat-card { background: #161925; border: 1px solid #23273A; border-radius: 6px; padding: 10px 20px; min-width: 180px; text-align: center; }
     .stat-label { font-size: 11px; text-transform: uppercase; color: #718096; margin-bottom: 4px; }
     .stat-value { font-size: 18px; font-weight: 700; color: #F4D068; }
+    
+    .action-container-static { display: flex; flex-direction: column; align-items: center; margin-top: 25px; width: 100%; }
+    .pin-auth-wrapper { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; }
+    .pin-input { width: 150px; height: 38px; background: #161925; border: 1px solid #23273A; border-radius: 6px; color: #FFF; text-align: center; font-size: 14px; font-weight: 600; outline: none; }
+    .pin-verify-btn { padding: 0 16px; height: 38px; background: #23273A; border: none; border-radius: 6px; color: #E2E8F0; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; }
+    .pin-feedback-msg { font-size: 11px; font-weight: 600; margin-bottom: 10px; height: 14px; }
 </style>
 
 <div class="header-wrapper">
@@ -278,56 +291,37 @@ html_elements = html_elements.replace("__VALUE_PLACEHOLDER__", summary_value)
 html_elements = html_elements.replace("__COLLECTED_PLACEHOLDER__", summary_collected)
 html_elements = html_elements.replace("__USERNAME_UPPER__", st.session_state["username"].upper())
 
-st.components.v1.html(html_elements, height=480, scrolling=False)
+st.components.v1.html(html_elements, height=475, scrolling=False)
 
 
 # ====================================================================
-# 🎛️ POP-UP INTERACTIVE DIALOG WINDOW STRUCTURE (ZERO DESIGN SHIFTING)
+# COMPACT SHUFFLE ANIMATION DIALOG POP-UP 
 # ====================================================================
 
-@st.dialog("Medallion Core Generator", width="large")
-def run_mining_modal_dialog():
-    # Render styles localized inside the component sandbox to match original setup perfectly
-    modal_html_template = """
+@st.dialog("Mining Animation Module", width="small")
+def trigger_compact_animation_box():
+    # Only the animation frames and claiming actions render inside this tight sandboxed viewport
+    compact_html_template = """
     <style>
-        body { margin: 0; padding: 15px 0 0 0; background: #0E1117; font-family: 'Inter', sans-serif; }
-        .action-container { display: flex; flex-direction: column; align-items: center; width: 100%; }
-        .pin-auth-wrapper { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; }
-        .pin-input { width: 150px; height: 38px; background: #161925; border: 1px solid #23273A; border-radius: 6px; color: #FFF; text-align: center; font-size: 14px; font-weight: 600; outline: none; }
-        .pin-verify-btn { padding: 0 16px; height: 38px; background: #23273A; border: none; border-radius: 6px; color: #E2E8F0; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; }
-        .pin-feedback-msg { font-size: 11px; font-weight: 600; margin-bottom: 10px; height: 14px; text-align: center; }
-        
-        .mine-button { width: 424px; height: 46px; background-color: #F4D068; border: none; border-radius: 6px; color: #0E1117; font-size: 14px; font-weight: 700; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 15px rgba(244, 208, 104, 0.2); }
-        .mine-button:disabled { opacity: 0.35; cursor: not-allowed; background-color: #161925 !important; color: #3D4563 !important; border: 1px solid #23273A; box-shadow: none !important; }
-        
-        .animation-display { margin-top: 20px; height: 240px; display: flex; flex-direction: column; align-items: center; }
-        .spin-box { width: 140px; height: 140px; border-radius: 12px; background: #161925; border: 3px solid #23273A; display: none; align-items: center; justify-content: center; }
-        .spin-box img { width: 88%; height: 88%; object-fit: contain; }
-        .outcome-text-wrapper { margin-top: 15px; height: 35px; text-align: center; opacity: 0; }
+        body { margin: 0; padding: 0; background: #0E1117; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .animation-container-isolated { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 260px; width: 100%; }
+        .spin-box { width: 135px; height: 135px; border-radius: 12px; background: #161925; border: 3px solid #23273A; display: flex; align-items: center; justify-content: center; }
+        .spin-box img { width: 85%; height: 85%; object-fit: contain; }
+        .outcome-text-wrapper { margin-top: 12px; height: 35px; text-align: center; opacity: 0; transition: opacity 0.2s ease; }
         .outcome-bottom { font-size: 18px; font-weight: 800; color: #F4D068; }
         
-        .claim-button { margin-top: 14px; width: 160px; height: 32px; background-color: transparent; border: 2px solid #F4D068; border-radius: 4px; color: #F4D068; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; opacity: 0; transform: translateY(5px); transition: all 0.2s; display: inline-block; }
+        .claim-button { margin-top: 12px; width: 160px; height: 32px; background-color: transparent; border: 2px solid #F4D068; border-radius: 4px; color: #F4D068; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; opacity: 0; transform: translateY(5px); transition: all 0.2s; display: inline-block; }
         .claim-button.visible { opacity: 1 !important; transform: translateY(0) !important; }
         .claim-button:hover { background-color: #F4D068; color: #0E1117; }
     </style>
 
-    <div class="action-container">
-        <div class="pin-auth-wrapper">
-            <input class="pin-input" type="text" id="pinField" placeholder="6-DIGIT PIN" maxlength="6" />
-            <button class="pin-verify-btn" id="verifyBtn" onclick="evaluatePinAuthorization()">Verify PIN</button>
+    <div class="animation-container-isolated">
+        <div class="spin-box" id="cyclerBox"><img id="cyclerImg" src="" /></div>
+        <div class="outcome-text-wrapper" id="outcomeWrapper">
+            <div style="font-size:10px; color:#718096; text-transform:uppercase; letter-spacing:1px;">Successfully Mined:</div>
+            <div class="outcome-bottom" id="itemNameTxt"></div>
         </div>
-        <div class="pin-feedback-msg" id="feedbackMsg" style="color: #718096;"></div>
-
-        <button class="mine-button" id="mineBtn" disabled onclick="runMiningSequence()">Mine a Medallion</button>
-        
-        <div class="animation-display">
-            <div class="spin-box" id="cyclerBox"><img id="cyclerImg" src="" /></div>
-            <div class="outcome-text-wrapper" id="outcomeWrapper">
-                <div style="font-size:11px; color:#718096; text-transform:uppercase; letter-spacing:1px;">Successfully Mined:</div>
-                <div class="outcome-bottom" id="itemNameTxt"></div>
-            </div>
-            <button class="claim-button" id="claimBtn" onclick="commitClaimToSheets()">Claim Medallion</button>
-        </div>
+        <button class="claim-button" id="claimBtn" onclick="commitClaimToSheets()">Claim Medallion</button>
     </div>
 
     <script>
@@ -336,25 +330,6 @@ def run_mining_modal_dialog():
         const weights = __POOL_WEIGHTS_PLACEHOLDER__;
         const endpoint = "__API_URL_PLACEHOLDER__";
         let selectedItem = "";
-
-        async function evaluatePinAuthorization() {
-            const pinValue = document.getElementById("pinField").value.trim();
-            const feedback = document.getElementById("feedbackMsg");
-            const verifyBtn = document.getElementById("verifyBtn");
-            if (pinValue.length < 4) return;
-            
-            try {
-                const response = await fetch(endpoint + "?action=verifyPin&pin=" + encodeURIComponent(pinValue));
-                const result = await response.json();
-                if (result.status === "success") {
-                    feedback.style.color = "#10b981"; feedback.innerText = "Access granted!";
-                    document.getElementById("pinField").disabled = true; verifyBtn.style.display = "none";
-                    document.getElementById("mineBtn").disabled = false;
-                } else {
-                    feedback.style.color = "#ef4444"; feedback.innerText = "Invalid code key verification.";
-                }
-            } catch(e) {}
-        }
 
         function selectWeightedWinner(items, itemWeights) {
             const totalWeight = itemWeights.reduce((acc, w) => acc + w, 0);
@@ -367,10 +342,11 @@ def run_mining_modal_dialog():
             return items[items.length - 1];
         }
 
-        function runMiningSequence() {
-            const box = document.getElementById('cyclerBox'); const img = document.getElementById('cyclerImg');
-            const wrapper = document.getElementById('outcomeWrapper'); const itemTxt = document.getElementById('itemNameTxt'); const claimBtn = document.getElementById('claimBtn');
-            document.getElementById('mineBtn').disabled = true; wrapper.style.opacity = "0"; claimBtn.classList.remove('visible'); box.style.display = "flex";
+        function triggerSequenceOnLoad() {
+            const img = document.getElementById('cyclerImg');
+            const wrapper = document.getElementById('outcomeWrapper'); 
+            const itemTxt = document.getElementById('itemNameTxt'); 
+            const claimBtn = document.getElementById('claimBtn');
             
             let counter = 0; let speed = 40; 
             selectedItem = selectWeightedWinner(pool, weights);
@@ -408,22 +384,96 @@ def run_mining_modal_dialog():
             };
             imgPing.src = pingUrl;
         }
+
+        // Run animation cycle instantly upon modal activation trigger
+        window.onload = triggerSequenceOnLoad;
     </script>
     """
-    modal_html = modal_html_template.replace("__ASSET_MAP_PLACEHOLDER__", asset_map_js)
+    modal_html = compact_html_template.replace("__ASSET_MAP_PLACEHOLDER__", asset_map_js)
     modal_html = modal_html.replace("__API_URL_PLACEHOLDER__", API_URL)
     modal_html = modal_html.replace("__PASSCODE_RAW__", st.session_state["user_passcode"])
     modal_html = modal_html.replace("__POOL_ITEMS_PLACEHOLDER__", json.dumps(js_pool_items))
     modal_html = modal_html.replace("__POOL_WEIGHTS_PLACEHOLDER__", json.dumps(js_pool_weights))
     
-    # Render inside the modal viewport cleanly with safety overflow limits removed
-    st.components.v1.html(modal_html, height=440, scrolling=False)
+    st.components.v1.html(modal_html, height=270, scrolling=False)
 
 
-# Render centered activation layout trigger track directly beneath portfolio layouts
-st.write("")
-col_l, col_c, col_r = st.columns([1, 2, 1])
-with col_c:
-    st.write("")
-    if st.button("Mine a Medallion ⚒️", use_container_width=True):
-        run_mining_modal_dialog()
+# ====================================================================
+# PRE-VERIFICATION INPUT WORKSPACE ENGINE (MAIN PAGE VIEW)
+# ====================================================================
+
+st.markdown("""
+<style>
+    /* Styling elements perfectly centered on the baseline view framework */
+    .stTextInput > div > div > input {
+        background-color: #161925 !important;
+        border: 1px solid #23273A !important;
+        color: #FFF !important;
+        text-align: center !important;
+        font-weight: 600 !important;
+        height: 42px !important;
+    }
+    div.stButton > button[key="main_verify_key_btn"] {
+        background-color: #23273A !important;
+        color: #E2E8F0 !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        height: 42px !important;
+        width: 100% !important;
+        border: 1px solid transparent !important;
+    }
+    div.stButton > button[key="main_verify_key_btn"]:hover {
+        border-color: #718096 !important;
+        color: #FFF !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+col_spacer_l, col_work, col_spacer_r = st.columns([1, 1.5, 1])
+
+with col_work:
+    # 1. PIN Verification Block (Disappears when authorized)
+    if not st.session_state["pin_authorized"]:
+        inner_l, inner_r = st.columns([1, 1])
+        with inner_l:
+            entered_pin = st.text_input("PIN Entry Field", placeholder="6-DIGIT PIN", max_chars=6, label_visibility="collapsed")
+        with inner_r:
+            if st.button("Verify PIN", key="main_verify_key_btn", use_container_width=True):
+                if len(entered_pin) >= 4:
+                    try:
+                        response = requests.get(f"{API_URL}?action=verifyPin&pin={entered_pin}", timeout=10)
+                        if response.json().get("status") == "success":
+                            st.session_state["pin_authorized"] = True
+                            st.toast("Access Granted!", icon="🟢")
+                            st.rerun()
+                        else:
+                            st.error("Invalid code key verification.")
+                    except:
+                        st.error("Network communication error.")
+    else:
+        st.markdown("<p style='text-align:center; color:#10b981; font-size:13px; font-weight:600; margin-bottom:5px;'>✓ Security framework authorized</p>", unsafe_allow_html=True)
+
+    # 2. Main Action Core Button (Locks/Unlocks instantly depending on auth session state tracking)
+    # Custom custom element injector style specs matching exact original gold parameters
+    st.markdown("""
+    <style>
+        div.stButton > button[key="main_action_mine_btn"] {
+            height: 48px !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+            border-radius: 6px !important;
+            transition: all 0.2s ease !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    if st.button(
+        "Mine a Medallion ⚒️", 
+        key="main_action_mine_btn", 
+        disabled=not st.session_state["pin_authorized"], 
+        use_container_width=True
+    ):
+        trigger_compact_animation_box()
