@@ -1,6 +1,6 @@
 # ====================================================================
 # PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
-# FILE: pages/dashboard.py (GUARANTEED SYNCHRONIZED REFRESH ENGINE)
+# FILE: pages/dashboard.py (DOM LINKED NATIVE REFRESH ENGINE)
 # ====================================================================
 
 import streamlit as st
@@ -15,7 +15,7 @@ if "authenticated" not in st.session_state or not st.session_state["authenticate
 
 st.set_page_config(page_title="Timber Medallion Portfolio", layout="wide", initial_sidebar_state="collapsed")
 
-# 🎯 BASE ENVIRONMENT STYLING
+# 🎯 BASE ENVIRONMENT STYLING & HIDDEN WIDGET DECORATOR
 st.markdown("""
 <style>
     .stApp {
@@ -26,6 +26,16 @@ st.markdown("""
     }
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; height: 0px; }
     div.block-container { padding-top: 25px !important; padding-bottom: 10px !important; max-width: 100% !important; }
+    
+    /* Safely compress the native refresh trigger completely out of sight */
+    div[data-testid="stTextInput"] {
+        position: absolute !important;
+        top: -9999px !important;
+        left: -9999px !important;
+        visibility: hidden !important;
+        height: 0px !important;
+        width: 0px !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -48,10 +58,15 @@ def get_image_base64(path):
             return base64.b64encode(image_file.read()).decode()
     return None
 
-# Force clear cache completely if an operation sequence has just concluded
-if "just_claimed" in st.session_state and st.session_state["just_claimed"]:
+# Create the primary hidden native state synchronizer widget
+sync_key_value = st.text_input(label="sync_trigger", value="", key="native_sync_trigger")
+
+# Active Cache Interceptor: Executes only when the native sync trigger receives data
+if sync_key_value != "":
     st.cache_data.clear()
-    st.session_state["just_claimed"] = False
+    # Wipe the native widget value clean for the next operational cycle
+    st.session_state["native_sync_trigger"] = ""
+    st.rerun()
 
 @st.cache_data(ttl=600)
 def fetch_sheet_records(passcode):
@@ -275,7 +290,7 @@ html_base_template = """
         setTimeout(cycle, speed);
     }
 
-    // ⚡ CROSS-ORIGIN PROMISE TIMEOUT ENGINE: Delivers data, pauses for transaction, fires sync refresh
+    // ⚡ DOM SYNC REFRESH ENGINE
     function commitClaimToSheets() {
         if (!selectedItem) return;
         const claimBtn = document.getElementById('claimBtn'); 
@@ -285,16 +300,26 @@ html_base_template = """
         const timestamp = new Date().getTime();
         const pingUrl = endpoint + "?action=mineMedallion&passcode=" + encodeURIComponent("__PASSCODE_RAW__") + "&item=" + encodeURIComponent(selectedItem) + "&_=" + timestamp;
         
-        // Execute unauthenticated dispatch securely using no-cors parameters
+        // Push raw transaction out using mode: no-cors parameters
         fetch(pingUrl, { mode: 'no-cors' });
         
-        // Block window execution system for exactly 2500ms to guarantee row allocation completion
+        // Wait exactly 2.5 seconds for cell calculation headroom, then tap into the native hidden widget
         setTimeout(() => {
-            if (window.parent && window.parent.Streamlit) {
-                window.parent.Streamlit.setComponentValue("FIRE_REFRESH_" + timestamp);
-            } else {
-                window.location.reload();
-            }
+            try {
+                if (window.parent && window.parent.document) {
+                    // Search layout tree for the hidden Streamlit input field element
+                    const nativeInput = window.parent.document.querySelector('div[data-testid="stTextInput"] input');
+                    if (nativeInput) {
+                        // Directly inject value string and simulate input event keys natively
+                        nativeInput.value = "REFRESH_" + timestamp;
+                        nativeInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        nativeInput.dispatchEvent(new KeyboardEvent('keydown', { keyCode: 13, bubbles: true })); // Enter
+                        return;
+                    }
+                }
+            } catch (err) {}
+            // Clean fallback handler
+            window.location.reload();
         }, 2500);
     }
 </script>
@@ -366,11 +391,5 @@ html_elements = html_elements.replace("__API_URL_PLACEHOLDER__", API_URL)
 html_elements = html_elements.replace("__POOL_ITEMS_PLACEHOLDER__", json.dumps(js_pool_items))
 html_elements = html_elements.replace("__POOL_WEIGHTS_PLACEHOLDER__", json.dumps(js_pool_weights))
 
-# Render current frame view layout
-component_sync_signal = st.components.v1.html(html_elements, height=750, scrolling=False)
-
-# Catch update payload signal to wipe cache out safely
-if isinstance(component_sync_signal, str) and component_sync_signal.startswith("FIRE_REFRESH_"):
-    st.session_state["just_claimed"] = True
-    st.cache_data.clear()
-    st.rerun()
+# Render main viewport layout engine
+st.components.v1.html(html_elements, height=750, scrolling=False)
