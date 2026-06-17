@@ -1,6 +1,6 @@
 # ====================================================================
 # PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
-# FILE: pages/dashboard.py (POP-UP MINING WINDOW ENGINE)
+# FILE: pages/dashboard.py (EXACT VISUAL SPECIFICATION PARSING)
 # ====================================================================
 
 import streamlit as st
@@ -15,7 +15,7 @@ if "authenticated" not in st.session_state or not st.session_state["authenticate
 
 st.set_page_config(page_title="Timber Medallion Portfolio", layout="wide", initial_sidebar_state="collapsed")
 
-# 🎯 HORIZONTAL OPPOSITE-ALIGNMENT ENGINE
+# 🎯 ORIGINAL VISUAL ENGINE: Kept exactly intact to preserve perfect design specs
 st.markdown("""
 <style>
     .stApp {
@@ -27,7 +27,7 @@ st.markdown("""
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; height: 0px; }
     div.block-container { padding-top: 15px !important; padding-bottom: 10px !important; max-width: 100% !important; }
     
-    /* ROW SPLIT SYSTEM: Splits buttons onto opposite sides */
+    /* 🛠️ ROW SPLIT SYSTEM: Splits main utility actions perfectly on a single level line */
     [data-testid="stVerticalBlock"] > div:has(div button[key="sys_refresh_btn"]) {
         width: 100% !important;
         display: flex !important;
@@ -45,7 +45,7 @@ st.markdown("""
         width: auto !important;
     }
 
-    /* 🔄 UPDATE DATA BUTTON - Left Side */
+    /* 🔄 UPDATE DATA BUTTON - Original specifications restored */
     div.stButton > button[key="sys_refresh_btn"] {
         background-color: #161925 !important;
         border: 1px solid #23273A !important;
@@ -63,7 +63,7 @@ st.markdown("""
         color: #FFF !important;
     }
 
-    /* 🛒 VISIT STORE BUTTON - Right Side */
+    /* 🛒 VISIT STORE BUTTON - Original gorgeous emerald layout restored */
     div.stButton > button[key="sys_route_store_btn"] {
         background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
         color: #FFFFFF !important;
@@ -82,6 +82,12 @@ st.markdown("""
         background: linear-gradient(135deg, #34D399 0%, #10B981 100%) !important;
         box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4) !important;
     }
+
+    /* Custom sizing override framework specifically targeting dialog frames */
+    div[data-testid="stDialog"] {
+        background-color: #0E1117 !important;
+        border: 1px solid #23273A !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -99,7 +105,7 @@ LABEL_MAPPING = {
 }
 
 # ====================================================================
-# SYSTEM BACKEND PROCESSORS - TOP LEVEL ACTIONS
+# TOP-LEVEL NAVIGATION ROW ACTIONS
 # ====================================================================
 
 if st.button("Update Data 🔄", key="sys_refresh_btn"):
@@ -152,7 +158,7 @@ for wood_name in MEDALLION_COLUMNS:
     js_pool_items.append(wood_name)
     js_pool_weights.append(weight_value)
 
-# Main Portfolio View (Without the action elements at the bottom)
+# The core portfolio base UI structure template
 html_base_template = """
 <style>
     body { margin: 0; padding: 10px 0 0 0; background: transparent; font-family: 'Inter', sans-serif; position: relative; }
@@ -276,15 +282,16 @@ st.components.v1.html(html_elements, height=480, scrolling=False)
 
 
 # ====================================================================
-# 🎛️ NEW POP-UP INTERACTIVE DIALOG WINDOW CONTEXT
+# 🎛️ POP-UP INTERACTIVE DIALOG WINDOW STRUCTURE (ZERO DESIGN SHIFTING)
 # ====================================================================
 
 @st.dialog("Medallion Core Generator", width="large")
 def run_mining_modal_dialog():
-    st.markdown("""
+    # Render styles localized inside the component sandbox to match original setup perfectly
+    modal_html_template = """
     <style>
-        div[data-testid="stDialog"] { background-color: #0E1117 !important; border: 1px solid #23273A; }
-        .action-container { display: flex; flex-direction: column; align-items: center; width: 100%; margin-top: 10px; }
+        body { margin: 0; padding: 15px 0 0 0; background: #0E1117; font-family: 'Inter', sans-serif; }
+        .action-container { display: flex; flex-direction: column; align-items: center; width: 100%; }
         .pin-auth-wrapper { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; }
         .pin-input { width: 150px; height: 38px; background: #161925; border: 1px solid #23273A; border-radius: 6px; color: #FFF; text-align: center; font-size: 14px; font-weight: 600; outline: none; }
         .pin-verify-btn { padding: 0 16px; height: 38px; background: #23273A; border: none; border-radius: 6px; color: #E2E8F0; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; }
@@ -303,15 +310,13 @@ def run_mining_modal_dialog():
         .claim-button.visible { opacity: 1 !important; transform: translateY(0) !important; }
         .claim-button:hover { background-color: #F4D068; color: #0E1117; }
     </style>
-    """, unsafe_allow_html=True)
 
-    modal_html_template = """
     <div class="action-container">
         <div class="pin-auth-wrapper">
             <input class="pin-input" type="text" id="pinField" placeholder="6-DIGIT PIN" maxlength="6" />
             <button class="pin-verify-btn" id="verifyBtn" onclick="evaluatePinAuthorization()">Verify PIN</button>
         </div>
-        <div class="pin-feedback-msg" id="feedbackMsg" style="color: #718096;">Enter verification key framework to activate rolling system.</div>
+        <div class="pin-feedback-msg" id="feedbackMsg" style="color: #718096;"></div>
 
         <button class="mine-button" id="mineBtn" disabled onclick="runMiningSequence()">Mine a Medallion</button>
         
@@ -411,9 +416,11 @@ def run_mining_modal_dialog():
     modal_html = modal_html.replace("__POOL_ITEMS_PLACEHOLDER__", json.dumps(js_pool_items))
     modal_html = modal_html.replace("__POOL_WEIGHTS_PLACEHOLDER__", json.dumps(js_pool_weights))
     
-    st.components.v1.html(modal_html, height=420, scrolling=False)
+    # Render inside the modal viewport cleanly with safety overflow limits removed
+    st.components.v1.html(modal_html, height=440, scrolling=False)
 
-# Render centered trigger button tracking layout directly below portfolio layout cards
+
+# Render centered activation layout trigger track directly beneath portfolio layouts
 st.write("")
 col_l, col_c, col_r = st.columns([1, 2, 1])
 with col_c:
