@@ -1,6 +1,6 @@
 # ====================================================================
 # PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
-# FILE: pages/store.py (REWARDS BARTER & TRANSACTION ENGINE)
+# FILE: pages/store.py (FLOATING CHECKOUT & IN-MODAL BARTER BALANCER)
 # ====================================================================
 
 import streamlit as st
@@ -9,13 +9,11 @@ import os
 import base64
 import json
 
-# Security Wall: Redirect if not authenticated via root login file
 if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
     st.switch_page("login.py")
 
 st.set_page_config(page_title="Timber Reward Store", layout="wide", initial_sidebar_state="collapsed")
 
-# 🎯 HORIZONTAL OPPOSITE-ALIGNMENT ENGINE
 st.markdown("""
 <style>
     .stApp {
@@ -25,8 +23,7 @@ st.markdown("""
         background-size: 24px 24px;
     }
     header, [data-testid="stHeader"], [data-testid="stSidebar"] { display: none !important; visibility: hidden; height: 0px; }
-    
-    div.block-container { padding-top: 20px !important; padding-bottom: 20px !important; }
+    div.block-container { padding-top: 20px !important; padding-bottom: 100px !important; }
     
     [data-testid="stVerticalBlock"] > div:has(div button[key="sys_back_dashboard_btn"]) {
         width: 100% !important;
@@ -37,13 +34,10 @@ st.markdown("""
         margin: 0 auto !important;
         box-sizing: border-box !important;
     }
-
     div[data-testid="element-container"]:has(button[key="sys_back_dashboard_btn"]) {
         display: inline-flex !important;
         width: auto !important;
     }
-
-    /* ↩️ RETURN TO DASHBOARD BUTTON */
     div.stButton > button[key="sys_back_dashboard_btn"] {
         background-color: #161925 !important;
         border: 1px solid #23273A !important;
@@ -52,23 +46,15 @@ st.markdown("""
         border-radius: 6px !important;
         padding: 0.45rem 1.5rem !important;
         width: 240px !important;
-        transition: all 0.2s ease !important;
-        margin: 0 !important;
     }
     div.stButton > button[key="sys_back_dashboard_btn"]:hover {
         background-color: #23273A !important;
         border-color: #718096 !important;
         color: #FFF !important;
     }
-
     @media (max-width: 768px) {
-        [data-testid="stVerticalBlock"] > div:has(div button[key="sys_back_dashboard_btn"]) {
-            flex-direction: column !important;
-            gap: 10px !important;
-        }
-        div.stButton > button[key="sys_back_dashboard_btn"] {
-            width: 100% !important;
-        }
+        [data-testid="stVerticalBlock"] > div:has(div button[key="sys_back_dashboard_btn"]) { flex-direction: column !important; gap: 10px !important; }
+        div.stButton > button[key="sys_back_dashboard_btn"] { width: 100% !important; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -100,7 +86,7 @@ def fetch_sheet_records(passcode):
 
 live_data, live_inventory, summary_value, summary_collected = fetch_sheet_records(user_passcode)
 
-# Setup items array
+# Explicitly index mapping to track spreadsheet storage column index keys
 STORE_ITEMS = [
     {"id": "chocolate_bar", "title": "Premium Chocolate Bar", "cost": 150, "desc": "A rich, gourmet chocolate bar to sweeten your achievements.", "img_filename": "ChocolateBar.jpg"},
     {"id": "lollies", "title": "Mixed Candy Box", "cost": 250, "desc": "An assortment of premium lollies and sweet treats perfect for sharing.", "img_filename": "Lollies.jpg"},
@@ -109,7 +95,6 @@ STORE_ITEMS = [
     {"id": "gift_cards", "title": "Digital Gift Card Bundle", "cost": 1500, "desc": "High-tier gift code token redeemable across major store networks.", "img_filename": "GiftCards.jpg"}
 ]
 
-# Serialized conversion profiles for JavaScript processing
 items_json = json.dumps(STORE_ITEMS)
 inventory_json = json.dumps({k: int(v) for k, v in live_inventory.items() if int(v) > 0})
 
@@ -144,36 +129,38 @@ html_store_template = """
     .item-desc { font-size: 12px; color: rgba(255, 255, 255, 0.4); line-height: 1.4; margin-bottom: 15px; min-height: 34px; }
     .item-cost-badge { font-size: 13px; font-weight: 700; color: #10B981; margin-bottom: 15px; }
     
-    /* QUANTITY MANAGER CONTROLS */
     .qty-container { display: flex; align-items: center; gap: 12px; background: #0E1117; border: 1px solid #23273A; border-radius: 6px; padding: 4px 10px; margin-bottom: 5px; }
     .qty-btn { background: transparent; border: none; color: #718096; font-size: 16px; font-weight: bold; cursor: pointer; padding: 0 6px; user-select: none; }
     .qty-btn:hover { color: #FFF; }
     .qty-display { font-size: 14px; font-weight: 700; color: #FFF; min-width: 20px; text-align: center; }
 
-    .checkout-bar-container { display: flex; justify-content: center; margin-bottom: 40px; }
-    .checkout-trigger-btn { width: 424px; max-width: 100%; height: 48px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border: none; border-radius: 6px; color: #FFF; font-size: 14px; font-weight: 700; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2); }
+    /* 📌 POSITION FIXED OVERLAY DOCK */
+    .floating-checkout-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(22, 25, 37, 0.96); backdrop-filter: blur(10px); border-top: 1px solid #23273A; padding: 14px 20px; box-sizing: border-box; display: flex; justify-content: center; align-items: center; z-index: 9999; box-shadow: 0 -10px 35px rgba(0,0,0,0.6); }
+    .checkout-trigger-btn { width: 460px; max-width: 100%; height: 46px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border: none; border-radius: 6px; color: #FFF; font-size: 13px; font-weight: 700; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25); display: flex; justify-content: center; align-items: center; gap: 12px; }
     .checkout-trigger-btn:disabled { opacity: 0.35; cursor: not-allowed; background: #161925; box-shadow: none; border: 1px solid #23273A; }
+    .basket-tally-pill { background: rgba(255, 255, 255, 0.18); padding: 3px 9px; border-radius: 4px; font-size: 11px; font-weight: 800; color: #FFF; }
 
-    /* CHECKOUT MODAL OVERLAY SHEET */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(14, 17, 23, 0.9); backdrop-filter: blur(4px); display: none; align-items: flex-start; justify-content: center; z-index: 99999; padding-top: 40px; overflow-y: auto; box-sizing: border-box; }
-    .modal-box { background: #0E1117; border: 1px solid #23273A; border-radius: 12px; width: 480px; max-width: 95%; padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.7); box-sizing: border-box; margin-bottom: 40px; }
-    .modal-title { font-size: 20px; font-weight: 700; color: #FFF; margin-bottom: 15px; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(14, 17, 23, 0.94); backdrop-filter: blur(6px); display: none; align-items: flex-start; justify-content: center; z-index: 99999; padding-top: 30px; overflow-y: auto; box-sizing: border-box; }
+    .modal-box { background: #0E1117; border: 1px solid #23273A; border-radius: 12px; width: 520px; max-width: 95%; padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); box-sizing: border-box; margin-bottom: 50px; }
+    .modal-title { font-size: 19px; font-weight: 700; color: #FFF; margin-bottom: 15px; text-align: center; }
     
-    .summary-section { background: #161925; border: 1px solid #23273A; border-radius: 6px; padding: 12px; margin-bottom: 20px; text-align: left; }
-    .summary-row { display: flex; justify-content: space-between; font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 6px; }
-    .summary-row.total-line { border-top: 1px solid #23273A; padding-top: 8px; margin-top: 8px; font-weight: 700; color: #10B981; font-size: 15px; }
+    .summary-section { background: #161925; border: 1px solid #23273A; border-radius: 6px; padding: 14px; margin-bottom: 20px; text-align: left; }
+    .summary-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 8px; }
+    
+    .modal-inline-qty { display: flex; align-items: center; gap: 8px; background: #0E1117; border: 1px solid #23273A; border-radius: 4px; padding: 2px 6px; }
+    .modal-inline-qty button { background: transparent; border: none; color: #718096; cursor: pointer; font-weight: bold; font-size: 14px; padding: 0 4px; }
+    .modal-inline-qty button:hover { color: #FFF; }
+    .modal-inline-qty span { font-size: 12px; color: #FFF; font-weight: 700; min-width: 14px; text-align: center; }
 
-    .inventory-barter-list { max-height: 200px; overflow-y: auto; text-align: left; margin-bottom: 20px; background: #0E1117; border: 1px solid #23273A; border-radius: 6px; padding: 8px; }
+    .inventory-barter-list { max-height: 180px; overflow-y: auto; text-align: left; margin-bottom: 20px; background: #0E1117; border: 1px solid #23273A; border-radius: 6px; padding: 6px; }
     .barter-item-row { display: flex; align-items: center; justify-content: space-between; padding: 8px; border-bottom: 1px solid #161925; }
     .barter-label-group { display: flex; flex-direction: column; }
     .barter-title { font-size: 13px; font-weight: 600; color: #FFF; }
     .barter-meta { font-size: 11px; color: #718096; }
-
-    .barter-selector-wrap { display: flex; align-items: center; gap: 8px; }
     .barter-select { background: #161925; border: 1px solid #23273A; color: #FFF; border-radius: 4px; padding: 4px; font-size: 12px; outline: none; }
 
     .error-log-banner { color: #EF4444; font-size: 12px; font-weight: 600; min-height: 18px; margin-bottom: 15px; text-align: center; }
-    .finalize-btn { width: 100%; height: 42px; background: #F4D068; color: #0E1117; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; text-transform: uppercase; cursor: pointer; }
+    .finalize-btn { width: 100%; height: 44px; background: #F4D068; color: #0E1117; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; text-transform: uppercase; cursor: pointer; }
     .finalize-btn:disabled { background: #161925 !important; color: #3D4563 !important; border: 1px solid #23273A; cursor: not-allowed; }
     .close-modal-link { color: #718096; font-size: 12px; margin-top: 14px; display: inline-block; cursor: pointer; text-decoration: underline; }
 
@@ -189,7 +176,7 @@ html_store_template = """
 
 <div class="store-header-wrapper">
     <div class="store-title">Timber Reward <span>Store</span></div>
-    <div class="store-intro">Exchange your earned portfolio asset evaluations for real-world snacks and prize categories. Use your layout indicators to manage multiple quantities before initializing checkouts.</div>
+    <div class="store-intro">Exchange your earned portfolio asset evaluations for real-world rewards. Manage your quantities anywhere on the page and checkout using the sticky navigation deck.</div>
 </div>
 
 <div class="dashboard-row">
@@ -199,27 +186,31 @@ html_store_template = """
 
 <div class="store-grid">__STORE_ITEMS_PLACEHOLDER__</div>
 
-<div class="checkout-bar-container">
-    <button class="checkout-trigger-btn" id="basketCheckoutBtn" disabled onclick="openCheckoutBale()">Proceed to Verification Checkout</button>
+<div class="floating-checkout-anchor">
+    <button class="checkout-trigger-btn" id="basketCheckoutBtn" disabled onclick="openCheckoutBale()">
+        <span>Open Verification Checkout</span>
+        <span class="basket-tally-pill" id="floatingTallyPill">0 PTS</span>
+    </button>
 </div>
 
 <div class="modal-overlay" id="checkoutModal">
     <div class="modal-box">
         <div class="modal-title">Verify Trade Voucher</div>
         
+        <div style="text-align:left; font-size:12px; font-weight:700; color:#718096; text-transform:uppercase; margin-bottom:8px; letter-spacing:0.5px;">Review & Adjust Claims:</div>
         <div class="summary-section" id="cartSummaryContainer"></div>
         
         <div style="text-align:left; font-size:12px; font-weight:700; color:#718096; text-transform:uppercase; margin-bottom:8px; letter-spacing:0.5px;">Select Barter Coverage:</div>
         <div class="inventory-barter-list" id="barterListDom"></div>
         
         <div class="summary-section">
-            <div class="summary-row"><span>Total Cart Cost:</span><span id="labelSummaryCost">0 pts</span></div>
-            <div class="summary-row"><span>Selected Barter Value:</span><span id="labelSummaryBarter" style="color:#F4D068;">$0</span></div>
+            <div class="summary-row"><span>Total Cart Cost:</span><span id="labelSummaryCost" style="font-weight:700;">0 pts</span></div>
+            <div class="summary-row"><span>Selected Barter Value:</span><span id="labelSummaryBarter" style="color:#F4D068; font-weight:700;">$0</span></div>
         </div>
 
         <div class="error-log-banner" id="checkoutErrLog"></div>
         <button class="finalize-btn" id="finalTradeBtn" disabled onclick="executeFinalTransaction()">Finalise Trade Voucher</button>
-        <div class="close-modal-link" onclick="closeCheckoutBale()">Cancel & Modify Basket</div>
+        <div class="close-modal-link" onclick="closeCheckoutBale()">Back to Store Grid</div>
     </div>
 </div>
 
@@ -234,14 +225,30 @@ html_store_template = """
     function updateItemQuantity(itemId, adjustment) {
         if (!cart[itemId]) cart[itemId] = 0;
         cart[itemId] = Math.max(0, cart[itemId] + adjustment);
-        document.getElementById("qty_val_" + itemId).innerText = cart[itemId];
+        
+        const gridCounter = document.getElementById("qty_val_" + itemId);
+        if (gridCounter) gridCounter.innerText = cart[itemId];
+        
         evaluateBasketStatus();
+        
+        if (document.getElementById("checkoutModal").style.display === "flex") {
+            buildCartSummary();
+            recalculateBarterMath();
+        }
     }
 
     function evaluateBasketStatus() {
         let totalCount = 0;
-        for (let key in cart) { totalCount += cart[key]; }
+        let totalPoints = 0;
+        for (let itemId in cart) { 
+            totalCount += cart[itemId];
+            if (cart[itemId] > 0) {
+                const item = itemCatalog.find(i => i.id === itemId);
+                totalPoints += (item.cost * cart[itemId]);
+            }
+        }
         document.getElementById("basketCheckoutBtn").disabled = (totalCount === 0);
+        document.getElementById("floatingTallyPill").innerText = totalPoints + " PTS";
     }
 
     function openCheckoutBale() {
@@ -258,21 +265,41 @@ html_store_template = """
     function buildCartSummary() {
         const container = document.getElementById("cartSummaryContainer");
         container.innerHTML = "";
-        let totalPrice = 0;
+        let anyActiveItems = false;
+        
         for (let itemId in cart) {
             if (cart[itemId] > 0) {
+                anyActiveItems = true;
                 const item = itemCatalog.find(i => i.id === itemId);
                 const lineCost = item.cost * cart[itemId];
-                totalPrice += lineCost;
-                container.innerHTML += `<div class="summary-row"><span>${item.title} (x${cart[itemId]})</span><span>${lineCost} pts</span></div>`;
+                container.innerHTML += `
+                    <div class="summary-row">
+                        <span>${item.title}</span>
+                        <div style="display:flex; align-items:center; gap:15px;">
+                            <div class="modal-inline-qty">
+                                <button onclick="updateItemQuantity('${itemId}', -1)">-</button>
+                                <span>${cart[itemId]}</span>
+                                <button onclick="updateItemQuantity('${itemId}', 1)">+</button>
+                            </div>
+                            <span style="min-width:60px; text-align:right;">${lineCost} pts</span>
+                        </div>
+                    </div>`;
             }
         }
-        container.innerHTML += `<div class="summary-row total-line"><span>Total Balance Due:</span><span>${totalPrice} Points</span></div>`;
-        document.getElementById("labelSummaryCost").innerText = totalPrice + " pts";
+        
+        if (!anyActiveItems) {
+            container.innerHTML = `<div style="text-align:center; padding:15px; color:#718096; font-size:12px;">Your basket is completely empty.</div>`;
+            closeCheckoutBale();
+        }
     }
 
     function buildBarterInventoryList() {
         const target = document.getElementById("barterListDom");
+        const activeChoices = {};
+        document.querySelectorAll(".barter-select").forEach(sel => {
+            activeChoices[sel.getAttribute("data-key")] = sel.value;
+        });
+
         target.innerHTML = "";
         let inventoryEmpty = true;
 
@@ -283,7 +310,8 @@ html_store_template = """
                 const meta = medallionMetadata[key] || {name: key.toUpperCase(), value: 0};
                 let optionsHtml = "";
                 for (let i = 0; i <= ownedQty; i++) {
-                    optionsHtml += `<option value="${i}">${i}</option>`;
+                    const selectedMarker = (activeChoices[key] == i) ? "selected" : "";
+                    optionsHtml += `<option value="${i}" ${selectedMarker}>${i}</option>`;
                 }
                 target.innerHTML += `
                     <div class="barter-item-row">
@@ -322,9 +350,17 @@ html_store_template = """
             totalBarterProvided += (qtySelected * singleValue);
         });
 
+        document.getElementById("labelSummaryCost").innerText = totalCost + " pts";
         document.getElementById("labelSummaryBarter").innerText = "$" + totalBarterProvided;
+        
         const errorLog = document.getElementById("checkoutErrLog");
         const tradeBtn = document.getElementById("finalTradeBtn");
+
+        if (totalCost === 0) {
+            tradeBtn.disabled = true;
+            errorLog.innerText = "";
+            return;
+        }
 
         if (totalBarterProvided >= totalCost) {
             errorLog.innerText = "";
@@ -344,14 +380,15 @@ html_store_template = """
         let itemsSpentMap = {};
         selects.forEach(sel => {
             const q = parseInt(sel.value) || 0;
-            if (q > 0) {
-                itemsSpentMap[sel.getAttribute("data-key")] = q;
-            }
+            if (q > 0) { itemsSpentMap[sel.getAttribute("data-key")] = q; }
         });
 
         let finalBasketItems = {};
         for (let key in cart) {
-            if (cart[key] > 0) finalBasketItems[key] = cart[key];
+            if (cart[key] > 0) {
+                const item = itemCatalog.find(i => i.id === key);
+                finalBasketItems[item.title] = cart[key];
+            }
         }
 
         const payload = {
@@ -360,7 +397,7 @@ html_store_template = """
             barter_spent: itemsSpentMap
         };
 
-        const targetUrl = endpoint + "?action=executeStoreTrade&payload=" + encodeURIComponent(json.dumps(payload));
+        const targetUrl = endpoint + "?action=executeStoreTrade&payload=" + encodeURIComponent(JSON.stringify(payload));
         const transactionPing = new Image();
         transactionPing.onload = transactionPing.onerror = function() {
             setTimeout(() => {
@@ -401,7 +438,6 @@ for item in STORE_ITEMS:
     </div>
     """
 
-# Variable Injection Pipeline
 html_store_elements = html_store_template.replace("__STORE_ITEMS_PLACEHOLDER__", grid_items_html)
 html_store_elements = html_store_elements.replace("__VALUE_PLACEHOLDER__", summary_value)
 html_store_elements = html_store_elements.replace("__COLLECTED_PLACEHOLDER__", summary_collected)
@@ -411,4 +447,4 @@ html_store_elements = html_store_elements.replace("__MEDALLIONS_JSON__", medalli
 html_store_elements = html_store_elements.replace("__PASSCODE_RAW__", user_passcode)
 html_store_elements = html_store_elements.replace("__API_URL_PLACEHOLDER__", API_URL)
 
-st.components.v1.html(html_store_elements, height=950, scrolling=True)
+st.components.v1.html(html_store_elements, height=1050, scrolling=True)
