@@ -69,21 +69,32 @@ live_data, live_inventory, summary_value, summary_collected, dynamic_catalog = f
     user_passcode, st.session_state["store_refresh_token"]
 )
 
-# Read files securely from the repository folder and encode them as direct inline base64 data URIs
+# UPGRADED ASSET LOOKUP: Dynamic directory scanner to safely match cloud repo paths
 def determine_asset_filename(reward_key):
-    clean_id = str(reward_key).replace(" ", "")
-    possible_paths = [f"assets/{clean_id}.jpg", f"assets/{clean_id}.png", f"assets/{clean_id}.jpeg"]
+    # Remove spacing and switch to lower case for uniform lookups
+    clean_target = str(reward_key).replace(" ", "").lower()
     
-    for path in possible_paths:
-        if os.path.exists(path):
+    # Check both potential directory mappings inside Streamlit runtime instances
+    possible_dirs = ["assets", os.path.join(os.getcwd(), "assets")]
+    
+    for directory in possible_dirs:
+        if os.path.exists(directory):
             try:
-                with open(path, "rb") as img_file:
-                    encoded_string = base64.b64encode(img_file.read()).decode()
-                    mime_type = "image/png" if path.endswith(".png") else "image/jpeg"
-                    return f"data:{mime_type};base64,{encoded_string}"
+                # Scan all files inside the repository asset folder
+                for file in os.listdir(directory):
+                    file_name_only, ext = os.path.splitext(file)
+                    # If file matches reward identifier (ignoring casing differences)
+                    if file_name_only.replace(" ", "").lower() == clean_target:
+                        full_path = os.path.join(directory, file)
+                        with open(full_path, "rb") as img_file:
+                            encoded_string = base64.b64encode(img_file.read()).decode()
+                            mime_type = "image/png" if ext.lower() == ".png" else "image/jpeg"
+                            return f"data:{mime_type};base64,{encoded_string}"
             except Exception:
                 pass
-    return "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=150"
+                
+    # Direct fallback if encoding fails: link it directly using the standard static path
+    return f"app/static/assets/{reward_key.replace(' ', '')}.jpg"
 
 # Structure dynamic catalog array for template formatting injections
 STORE_ITEMS = []
@@ -104,7 +115,7 @@ for k, v in live_data.items():
     medallion_details[k] = {"name": v.get("Medallion", k.capitalize()), "value": int(v.get("Value", 0))}
 medallions_json = json.dumps(medallion_details)
 
-# Detect transaction payloads inside top query values
+# Handle trade vouchers 
 query_params = st.query_params
 if "payload_packet" in query_params:
     unpacked_payload = query_params["payload_packet"]
@@ -336,11 +347,9 @@ html_store_template = """
 </script>
 """
 
-# Build layout grid elements cleanly without nesting f-string function execution rules
 grid_items_html = ""
 for item in STORE_ITEMS:
     raw_desc = item['desc']
-    # Format basic double asterisks safely into bold html tags
     desc_html = raw_desc.replace("**", "<strong>", 1).replace("**", "</strong>", 1) if "**" in raw_desc else raw_desc
     
     grid_items_html += f"""
