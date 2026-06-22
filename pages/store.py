@@ -52,25 +52,26 @@ user_passcode = st.session_state.get("user_passcode", "DEFAULT_DEMO_KEY")
 if "store_refresh_token" not in st.session_state:
     st.session_state["store_refresh_token"] = 0
 
-# --- TRANSACTION PAYLOAD HANDLING BEFORE FETCHING LIVE BALANCE ---
+# --- FIXED TRANSACTION PAYLOAD HANDLING WITH EXPLICIT RERUN ---
 query_params = st.query_params
 if "payload_packet" in query_params:
     unpacked_payload = query_params["payload_packet"]
-    # Clear parameters instantly so reruns do not re-trigger the loop
     st.query_params.clear() 
     
-    with st.spinner("Processing your trade..."):
+    with st.spinner("Writing changes directly to Google Sheets master_sheet..."):
         try:
+            # Post transaction data straight to your Apps Script backend endpoint
             trade_response = requests.post(API_URL, json={
                 "action": "executeStoreTrade",
                 "passcode": user_passcode,
                 "payload": unpacked_payload
             }, timeout=15)
             
-            # Flush existing cache and bump token to ensure fresh remote data lookup
+            # Reset cache tags and force reload with refreshed database pulls
             st.cache_data.clear()
             st.session_state["store_refresh_token"] += 1
-            st.toast("🎉 Trade processed! Portfolio updated.")
+            st.toast("🎉 Trade successfully saved to Google Sheets master_sheet!")
+            st.rerun()  # Forces parent refresh to wipe iframe button lock
         except Exception as e:
             st.error(f"Transaction failed: {str(e)}")
 
@@ -92,11 +93,9 @@ live_data, live_inventory, summary_value, summary_collected, dynamic_catalog = f
     user_passcode, st.session_state["store_refresh_token"]
 )
 
-# FIXED LOOKUP: Specifically maps to Reward1.jpg, Reward2.jpg, etc.
 def determine_asset_filename(reward_key, index_fallback):
     digits = re.findall(r'\d+', str(reward_key))
     num_id = digits[0] if digits else str(index_fallback + 1)
-    
     target_filename = f"Reward{num_id}.jpg"
     
     possible_paths = [
@@ -210,7 +209,7 @@ html_store_template = """
 <div class="modal-overlay" id="checkoutModal">
     <div class="modal-box">
         <div class="modal-title">Verify Trade Voucher</div>
-        <div style="text-align:left; font-size:12px; font-weight:700; color:#718096; text-transform:uppercase; margin-bottom:8px;">Review Claims:</div>
+        <div style="text-align:left; font-size:12px; font-weight:700; color:#718096; text-transform:uppercase; margin-bottom:8px;">Review Claims (Edit quantities on background cards if needed):</div>
         <div class="summary-section" id="cartSummaryContainer"></div>
         
         <div style="text-align:left; font-size:12px; font-weight:700; color:#718096; text-transform:uppercase; margin-bottom:8px;">Select Medallions to Exchange (Barter Coverage):</div>
@@ -319,6 +318,7 @@ html_store_template = """
     function executeFinalTransaction() {
         const tradeBtn = document.getElementById("finalTradeBtn");
         tradeBtn.disabled = true;
+        tradeBtn.style.opacity = "0.5";
         tradeBtn.innerText = "Processing Trade Voucher...";
 
         let itemsSpentMap = {};
