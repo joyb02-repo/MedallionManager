@@ -52,6 +52,28 @@ user_passcode = st.session_state.get("user_passcode", "DEFAULT_DEMO_KEY")
 if "store_refresh_token" not in st.session_state:
     st.session_state["store_refresh_token"] = 0
 
+# --- TRANSACTION PAYLOAD HANDLING BEFORE FETCHING LIVE BALANCE ---
+query_params = st.query_params
+if "payload_packet" in query_params:
+    unpacked_payload = query_params["payload_packet"]
+    # Clear parameters instantly so reruns do not re-trigger the loop
+    st.query_params.clear() 
+    
+    with st.spinner("Processing your trade..."):
+        try:
+            trade_response = requests.post(API_URL, json={
+                "action": "executeStoreTrade",
+                "passcode": user_passcode,
+                "payload": unpacked_payload
+            }, timeout=15)
+            
+            # Flush existing cache and bump token to ensure fresh remote data lookup
+            st.cache_data.clear()
+            st.session_state["store_refresh_token"] += 1
+            st.toast("🎉 Trade processed! Portfolio updated.")
+        except Exception as e:
+            st.error(f"Transaction failed: {str(e)}")
+
 @st.cache_data(ttl=300)
 def fetch_sheet_records(passcode, refresh_trigger):
     try:
@@ -72,14 +94,11 @@ live_data, live_inventory, summary_value, summary_collected, dynamic_catalog = f
 
 # FIXED LOOKUP: Specifically maps to Reward1.jpg, Reward2.jpg, etc.
 def determine_asset_filename(reward_key, index_fallback):
-    # Extract any digits from the reward key string (e.g., "reward_key_1" -> "1")
     digits = re.findall(r'\d+', str(reward_key))
     num_id = digits[0] if digits else str(index_fallback + 1)
     
-    # Target filename matches your exact GitHub asset setup
     target_filename = f"Reward{num_id}.jpg"
     
-    # Check common repository runtime root directories
     possible_paths = [
         f"assets/{target_filename}",
         os.path.join(os.getcwd(), "assets", target_filename)
@@ -94,10 +113,8 @@ def determine_asset_filename(reward_key, index_fallback):
             except Exception:
                 pass
                 
-    # Fallback path if the application's base64 reader fails to locate the file
     return f"app/static/assets/{target_filename}"
 
-# Structure dynamic catalog array for template formatting injections
 STORE_ITEMS = []
 for idx, item in enumerate(dynamic_catalog):
     STORE_ITEMS.append({
@@ -115,27 +132,6 @@ medallion_details = {}
 for k, v in live_data.items():
     medallion_details[k] = {"name": v.get("Medallion", k.capitalize()), "value": int(v.get("Value", 0))}
 medallions_json = json.dumps(medallion_details)
-
-# Handle trade vouchers 
-query_params = st.query_params
-if "payload_packet" in query_params:
-    unpacked_payload = query_params["payload_packet"]
-    st.query_params.clear() 
-    
-    with st.spinner("Processing your trade..."):
-        try:
-            trade_response = requests.post(API_URL, json={
-                "action": "executeStoreTrade",
-                "passcode": user_passcode,
-                "payload": unpacked_payload
-            }, timeout=15)
-            
-            st.cache_data.clear()
-            st.session_state["store_refresh_token"] += 1
-            st.success("🎉 Trade processed successfully! Portfolio balances updated.")
-            st.rerun()
-        except Exception as e:
-            st.error(f"Transaction failed: {str(e)}")
 
 html_store_template = """
 <style>
