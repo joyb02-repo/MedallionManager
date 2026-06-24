@@ -76,13 +76,16 @@ live_data, live_inventory, summary_value, summary_collected, dynamic_catalog = f
 )
 
 def determine_asset_filename(reward_key, index_fallback):
+    # Extracts the number out of strings like "Reward 1" or "Reward1"
     digits = re.findall(r'\d+', str(reward_key))
     num_id = digits[0] if digits else str(index_fallback + 1)
     target_filename = f"Reward{num_id}.jpg"
     
     possible_paths = [
+        os.path.join(os.getcwd(), "assets", target_filename),
+        os.path.join(os.getcwd(), "app", "static", "assets", target_filename),
         f"assets/{target_filename}",
-        os.path.join(os.getcwd(), "assets", target_filename)
+        f"app/static/assets/{target_filename}"
     ]
     
     for path in possible_paths:
@@ -94,7 +97,8 @@ def determine_asset_filename(reward_key, index_fallback):
             except Exception:
                 pass
                 
-    return f"app/static/assets/{target_filename}"
+    # Direct fallback asset mapping URL fallback route
+    return f"https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=300"
 
 STORE_ITEMS = []
 for idx, item in enumerate(dynamic_catalog):
@@ -312,9 +316,7 @@ html_store_template = """
         let finalBasketItems = {};
         for (let key in cart) {
             if (cart[key] > 0) {
-                // Populate both formats ("Reward 2" and "Reward2") to accommodate both possible Google Apps Script lookup variations flawlessly
                 finalBasketItems[key] = cart[key];
-                
                 let cleanedKey = key.replace(/\s+/g, '');
                 finalBasketItems[cleanedKey] = cart[key];
             }
@@ -340,12 +342,12 @@ html_store_template = """
 </script>
 """
 
-# Static string fragment blueprint template to avoid strict runtime AST formatting exceptions
+# Fixed blueprint fragment mapping logic injection securely
 CARD_TEMPLATE = """
 <div class="store-card">
     <div style="width: 100%;">
         <div class="item-image-frame">
-            <img src="__IMG__" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=150';" />
+            <img src="__IMG__" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=300';" />
         </div>
         <div class="item-title">__TITLE__</div>
         <div class="item-desc">__DESC__</div>
