@@ -76,16 +76,17 @@ live_data, live_inventory, summary_value, summary_collected, dynamic_catalog = f
 
 def determine_asset_filename(reward_key, index_fallback):
     """
-    Constructs GitHub direct raw CDN paths based on the numeric column A spreadsheet key.
+    Constructs accurate GitHub direct raw paths from the numeric Reward Keys.
     """
+    # Pull any integers out of your key column (e.g., '1' -> '1')
     digits = re.findall(r'\d+', str(reward_key))
     num_id = digits[0] if digits else str(index_fallback + 1)
     
-    # Using your repository credentials
     github_user = "joyb02-repo"
     github_repo = "MedallionManager"
     
-    return f"https://raw.githubusercontent.com/{github_user}/{github_repo}/main/assets/Reward{num_id}.jpg"
+    # Changed from /main/ to /master/ to match your live repository branch structure
+    return f"https://raw.githubusercontent.com/{github_user}/{github_repo}/master/assets/Reward{num_id}.jpg"
 
 STORE_ITEMS = []
 for idx, item in enumerate(dynamic_catalog):
