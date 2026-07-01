@@ -151,6 +151,8 @@ html_store_template = """
     .qty-btn:hover { color: #FFF; }
     .qty-display { font-size: 14px; font-weight: 700; color: #FFF; min-width: 20px; text-align: center; }
 
+    /* Original in-component floating bar is kept as a fallback for cross-origin edge cases,
+       but is hidden by default once the parent-window bar is successfully mounted. */
     .floating-checkout-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(22, 25, 37, 0.96); backdrop-filter: blur(10px); border-top: 1px solid #23273A; padding: 14px 20px; box-sizing: border-box; display: flex; justify-content: center; align-items: center; z-index: 9999; box-shadow: 0 -10px 35px rgba(0,0,0,0.6); }
     .checkout-trigger-btn { width: 460px; max-width: 100%; height: 46px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border: none; border-radius: 6px; color: #FFF; font-size: 13px; font-weight: 700; text-transform: uppercase; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 12px; }
     .checkout-trigger-btn:disabled { opacity: 0.35; cursor: not-allowed; background: #161925; box-shadow: none; border: 1px solid #23273A; }
@@ -190,7 +192,7 @@ html_store_template = """
 
 <div class="store-grid">__STORE_ITEMS_PLACEHOLDER__</div>
 
-<div class="floating-checkout-anchor">
+<div class="floating-checkout-anchor" id="fallbackCheckoutAnchor">
     <button class="checkout-trigger-btn" id="basketCheckoutBtn" disabled onclick="openCheckoutBale()">
         <span>Open Verification Checkout</span>
         <span class="basket-tally-pill" id="floatingTallyPill">0 PTS</span>
@@ -244,6 +246,13 @@ html_store_template = """
         }
         document.getElementById("basketCheckoutBtn").disabled = (totalCount === 0);
         document.getElementById("floatingTallyPill").innerText = totalPoints + " PTS";
+
+        // Mirror state onto the screen-locked bar mounted in the parent window (if available)
+        if (window.__timberBtn && window.__timberPill && window.__timberBar) {
+            window.__timberBtn.disabled = (totalCount === 0);
+            window.__timberPill.innerText = totalPoints + " PTS";
+            window.__timberBar.classList.toggle("visible", totalCount > 0);
+        }
     }
 
     function openCheckoutBale() {
@@ -348,40 +357,50 @@ html_store_template = """
             }, 600);
         };
         imgPing.src = dispatchUrl;
-        // 📌 Sync a screen-locked checkout bar into the real browser window.
-    // (position:fixed inside this component only pins to the iframe's own box,
-    // not the actual visible viewport — this escapes that limitation.)
+    }
+
+    // 📌 Mount a screen-locked checkout bar in the real browser window.
+    // position:fixed inside this component only pins to the iframe's own box,
+    // not the actual visible viewport, so a tall page scrolls the bar away with it.
+    // This creates the bar in the parent document instead, where fixed positioning
+    // behaves the way you'd expect.
     (function relocateCheckoutBar() {
         try {
             const parentDoc = window.parent.document;
 
-            if (!parentDoc.getElementById('timberFixedStyles')) {
-                const styleTag = parentDoc.createElement('style');
-                styleTag.id = 'timberFixedStyles';
+            if (!parentDoc.getElementById("timberFixedStyles")) {
+                const styleTag = parentDoc.createElement("style");
+                styleTag.id = "timberFixedStyles";
                 styleTag.innerHTML = `
-                    #timberCheckoutBar { position: fixed; bottom: 0; left: 0; width: 100%;
+                    #timberCheckoutBar {
+                        position: fixed; bottom: 0; left: 0; width: 100%;
                         background: rgba(22,25,37,0.96); backdrop-filter: blur(10px);
                         border-top: 1px solid #23273A; padding: 14px 20px; box-sizing: border-box;
                         display: flex; justify-content: center; align-items: center; z-index: 999999;
                         box-shadow: 0 -10px 35px rgba(0,0,0,0.6); font-family: 'Inter', sans-serif;
-                        transform: translateY(120%); transition: transform 0.28s cubic-bezier(0.16,1,0.3,1); }
+                        transform: translateY(120%); transition: transform 0.28s cubic-bezier(0.16,1,0.3,1);
+                    }
                     #timberCheckoutBar.visible { transform: translateY(0); }
-                    #timberCheckoutBar button { width: 460px; max-width: 90vw; height: 46px;
+                    #timberCheckoutBar button {
+                        width: 460px; max-width: 90vw; height: 46px;
                         background: linear-gradient(135deg, #10B981 0%, #059669 100%); border: none;
                         border-radius: 6px; color: #FFF; font-size: 13px; font-weight: 700;
                         text-transform: uppercase; cursor: pointer; display: flex; justify-content: center;
-                        align-items: center; gap: 12px; }
+                        align-items: center; gap: 12px;
+                    }
                     #timberCheckoutBar button:disabled { opacity: 0.35; cursor: not-allowed; }
-                    #timberCheckoutBar .basket-tally-pill { background: rgba(255,255,255,0.18);
-                        padding: 3px 9px; border-radius: 4px; font-size: 11px; font-weight: 800; color: #FFF; }
+                    #timberCheckoutBar .basket-tally-pill {
+                        background: rgba(255,255,255,0.18); padding: 3px 9px; border-radius: 4px;
+                        font-size: 11px; font-weight: 800; color: #FFF;
+                    }
                 `;
                 parentDoc.head.appendChild(styleTag);
             }
 
-            let bar = parentDoc.getElementById('timberCheckoutBar');
+            let bar = parentDoc.getElementById("timberCheckoutBar");
             if (!bar) {
-                bar = parentDoc.createElement('div');
-                bar.id = 'timberCheckoutBar';
+                bar = parentDoc.createElement("div");
+                bar.id = "timberCheckoutBar";
                 parentDoc.body.appendChild(bar);
             }
             bar.innerHTML = `
@@ -389,15 +408,19 @@ html_store_template = """
                     <span>Open Verification Checkout</span>
                     <span class="basket-tally-pill" id="parentTallyPill">0 PTS</span>
                 </button>`;
-            bar.querySelector('#parentCheckoutBtn').addEventListener('click', openCheckoutBale);
+            bar.querySelector("#parentCheckoutBtn").addEventListener("click", openCheckoutBale);
 
             window.__timberBar = bar;
-            window.__timberBtn = bar.querySelector('#parentCheckoutBtn');
-            window.__timberPill = bar.querySelector('#parentTallyPill');
+            window.__timberBtn = bar.querySelector("#parentCheckoutBtn");
+            window.__timberPill = bar.querySelector("#parentTallyPill");
 
-            // Original in-component bar is now redundant
-            document.querySelector('.floating-checkout-anchor').style.display = 'none';
-        } catch (e) { /* cross-origin fallback: original fixed bar still works within iframe */ }
+            // Original in-component bar is now redundant since the parent-window bar took over
+            const fallbackAnchor = document.getElementById("fallbackCheckoutAnchor");
+            if (fallbackAnchor) fallbackAnchor.style.display = "none";
+        } catch (e) {
+            // Cross-origin restriction or other failure: original in-component fixed bar
+            // (#fallbackCheckoutAnchor) stays visible and still works within the iframe.
+        }
     })();
 </script>
 """
