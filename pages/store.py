@@ -172,6 +172,16 @@ html_store_template = """
     .barter-meta { font-size: 11px; color: #718096; }
     .barter-select { background: #161925; border: 1px solid #23273A; color: #FFF; border-radius: 4px; padding: 4px; font-size: 12px; outline: none; }
 
+    .claim-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; }
+    .claim-label-group { display: flex; flex-direction: column; text-align: left; }
+    .claim-title { font-size: 13px; color: rgba(255,255,255,0.85); font-weight: 600; }
+    .claim-subtotal { font-size: 11px; color: #718096; }
+    .claim-qty-controls { display: flex; align-items: center; gap: 10px; background: #0E1117; border: 1px solid #23273A; border-radius: 6px; padding: 3px 8px; }
+    .claim-qty-btn { background: transparent; border: none; color: #718096; font-size: 15px; font-weight: bold; cursor: pointer; padding: 0 5px; user-select: none; }
+    .claim-qty-btn:hover { color: #FFF; }
+    .claim-qty-val { font-size: 13px; font-weight: 700; color: #FFF; min-width: 16px; text-align: center; }
+    .wasted-row span:last-child { color: #EF4444 !important; }
+
     .error-log-banner { color: #EF4444; font-size: 12px; font-weight: 600; min-height: 18px; margin-bottom: 15px; text-align: center; }
     .finalize-btn { width: 100%; height: 44px; background: #F4D068; color: #0E1117; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; text-transform: uppercase; cursor: pointer; }
     .finalize-btn:disabled { background: #161925 !important; color: #3D4563 !important; border: 1px solid #23273A; cursor: not-allowed; }
@@ -211,6 +221,7 @@ html_store_template = """
         <div class="summary-section">
             <div class="summary-row"><span>Total Cart Cost:</span><span id="labelSummaryCost" style="font-weight:700;">0 PTS</span></div>
             <div class="summary-row"><span>Exchanged Barter Value:</span><span id="labelSummaryBarter" style="color:#F4D068; font-weight:700;">0 PTS</span></div>
+            <div class="summary-row wasted-row"><span>Medallion Value Wasted:</span><span id="labelSummaryWasted" style="font-weight:700;">0 PTS</span></div>
         </div>
 
         <div class="error-log-banner" id="checkoutErrLog"></div>
@@ -255,17 +266,58 @@ html_store_template = """
         }
     }
 
-    function openCheckoutBale() {
+    function renderCartSummary() {
         const container = document.getElementById("cartSummaryContainer");
         container.innerHTML = "";
+        let anyItems = false;
         for (let itemId in cart) {
             if (cart[itemId] > 0) {
+                anyItems = true;
                 const item = itemCatalog.find(i => i.id === itemId);
                 if(item) {
-                    container.innerHTML += `<div class="summary-row"><span>${item.title}</span><strong>x${cart[itemId]} (${item.cost * cart[itemId]} PTS)</strong></div>`;
+                    container.innerHTML += `
+                        <div class="claim-row">
+                            <div class="claim-label-group">
+                                <span class="claim-title">${item.title}</span>
+                                <span class="claim-subtotal">${item.cost} PTS each &middot; ${item.cost * cart[itemId]} PTS subtotal</span>
+                            </div>
+                            <div class="claim-qty-controls">
+                                <button class="claim-qty-btn" onclick="updateCartQuantityInCheckout('${itemId}', -1)">-</button>
+                                <span class="claim-qty-val">${cart[itemId]}</span>
+                                <button class="claim-qty-btn" onclick="updateCartQuantityInCheckout('${itemId}', 1)">+</button>
+                            </div>
+                        </div>`;
                 }
             }
         }
+        if (!anyItems) {
+            container.innerHTML = '<div style="padding:10px 0; text-align:center; color:#718096;">Your basket is empty.</div>';
+        }
+    }
+
+    // Lets the user adjust quantities directly inside the "Review Claims" section
+    // without leaving the checkout modal. Keeps the store-grid counters, the
+    // checkout bar, and the barter math all in sync with the change.
+    function updateCartQuantityInCheckout(itemId, adjustment) {
+        if (!cart[itemId]) cart[itemId] = 0;
+        cart[itemId] = Math.max(0, cart[itemId] + adjustment);
+
+        // Keep the quantity stepper on the underlying store card in sync
+        const gridQtyEl = document.getElementById("qty_val_" + itemId);
+        if (gridQtyEl) gridQtyEl.innerText = cart[itemId];
+
+        evaluateBasketStatus();
+        renderCartSummary();
+        recalculateBarterMath();
+
+        // If the basket just emptied out entirely, there's nothing left to check out
+        let totalCount = 0;
+        for (let id in cart) { totalCount += cart[id]; }
+        if (totalCount === 0) closeCheckoutBale();
+    }
+
+    function openCheckoutBale() {
+        renderCartSummary();
         buildBarterInventoryList();
         recalculateBarterMath();
         document.getElementById("checkoutModal").style.display = "flex";
@@ -313,11 +365,17 @@ html_store_template = """
 
         document.getElementById("labelSummaryCost").innerText = totalCost + " PTS";
         document.getElementById("labelSummaryBarter").innerText = totalBarter + " PTS";
-        
+
+        // Wasted value = excess barter value handed over beyond what the cart actually costs.
+        // Only meaningful once coverage is sufficient; otherwise there's nothing "wasted" yet.
+        const wastedAmount = totalBarter > totalCost ? (totalBarter - totalCost) : 0;
+        document.getElementById("labelSummaryWasted").innerText = wastedAmount + " PTS";
+
         const err = document.getElementById("checkoutErrLog");
         const btn = document.getElementById("finalTradeBtn");
         
-        if (totalBarter >= totalCost) { err.innerText = ""; btn.disabled = false; }
+        if (totalCost > 0 && totalBarter >= totalCost) { err.innerText = ""; btn.disabled = false; }
+        else if (totalCost === 0) { err.innerText = ""; btn.disabled = true; }
         else { err.innerText = "Insufficient barter coverage. Add more medallions."; btn.disabled = true; }
     }
 
