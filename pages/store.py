@@ -7,7 +7,6 @@ import streamlit as st
 import requests
 import json
 import os
-import re
 
 if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
     st.switch_page("login.py")
@@ -76,15 +75,14 @@ live_data, live_inventory, summary_value, summary_collected, dynamic_catalog = f
 
 def determine_asset_filename(reward_key, index_fallback):
     """
-    Constructs accurate GitHub direct raw paths from the Reward Keys.
-    Handles numeric ids (e.g., 1) and string ids (e.g., 'Reward 1') seamlessly.
+    Directly converts numeric column A keys to integer strings.
+    Guarantees clean paths like Reward1.jpg, Reward2.jpg, avoiding float parsing bugs.
     """
-    cleaned_key = str(reward_key).strip()
-    digits = re.findall(r'\d+', cleaned_key)
-    
-    if digits:
-        num_id = digits[0]
-    else:
+    try:
+        # Convert to float first to safely clean up any decimal points (e.g. "1.0" -> 1)
+        num_id = str(int(float(str(reward_key).strip())))
+    except (ValueError, TypeError):
+        # Fallback to catalog position indexing if your spreadsheet contains an empty cell or text string
         num_id = str(index_fallback + 1)
         
     github_user = "joyb02-repo"
