@@ -76,17 +76,23 @@ live_data, live_inventory, summary_value, summary_collected, dynamic_catalog = f
 
 def determine_asset_filename(reward_key, index_fallback):
     """
-    Directly addresses files over GitHub's raw Content Delivery Network.
-    Bypasses iframe security constraints cleanly.
+    Cleans up any spacing anomalies between the Google Sheet key and GitHub file names,
+    then generates a resilient direct raw GitHub user content link.
     """
-    digits = re.findall(r'\d+', str(reward_key))
+    # 1. Strip all spaces out of the key (e.g., "Reward 1" -> "Reward1")
+    cleaned_key = str(reward_key).replace(" ", "")
+    
+    # 2. Extract digits as a safe fallback mechanism
+    digits = re.findall(r'\d+', cleaned_key)
     num_id = digits[0] if digits else str(index_fallback + 1)
     
-    # Leverages your exact repository profile info seen in the workspace screenshot
     github_user = "joyb02"
     github_repo = "MedallionManager"
-    
-    return f"https://raw.githubusercontent.com/{github_user}/{github_repo}/main/assets/Reward{num_id}.jpg"
+    base_url = f"https://raw.githubusercontent.com/{github_user}/{github_repo}/main/assets"
+
+    # We pass the primary expected path, but the JavaScript onerror attribute below 
+    # will handle fallback variations if capitalization changes on GitHub.
+    return f"{base_url}/Reward{num_id}.jpg"
 
 STORE_ITEMS = []
 for idx, item in enumerate(dynamic_catalog):
@@ -208,6 +214,22 @@ html_store_template = """
     
     let cart = {};
 
+    function handleImageLoadError(imgElement) {
+        // Multi-stage cascading fallback logic to capture absolute path deviations
+        if (!imgElement.getAttribute('data-retry-state')) {
+            imgElement.setAttribute('data-retry-state', '1');
+            // Try lowercase version 'reward1.jpg' instead of 'Reward1.jpg'
+            imgElement.src = imgElement.src.replace('/Reward', '/reward');
+            return;
+        }
+        if (imgElement.getAttribute('data-retry-state') === '1') {
+            imgElement.setAttribute('data-retry-state', '2');
+            // Try explicit fallback to an asset card thumbnail context
+            imgElement.src = 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400';
+            return;
+        }
+    }
+
     function updateItemQuantity(itemId, adjustment) {
         if (!cart[itemId]) cart[itemId] = 0;
         cart[itemId] = Math.max(0, cart[itemId] + adjustment);
@@ -215,6 +237,7 @@ html_store_template = """
         evaluateBasketStatus();
     }
 
+    // ... (Remainder of checkout basket status scripts stay identical) ...
     function evaluateBasketStatus() {
         let totalCount = 0;
         let totalPoints = 0;
@@ -334,7 +357,7 @@ CARD_TEMPLATE = """
 <div class="store-card">
     <div style="width: 100%;">
         <div class="item-image-frame">
-            <img src="__IMG__" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400';" />
+            <img src="__IMG__" onerror="handleImageLoadError(this)" />
         </div>
         <div class="item-title">__TITLE__</div>
         <div class="item-desc">__DESC__</div>
