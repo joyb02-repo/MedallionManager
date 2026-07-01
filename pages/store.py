@@ -1,6 +1,6 @@
 # ====================================================================
 # PROJECT: TIMBER MEDALLION PORTFOLIO SYSTEM
-# FILE: pages/store.py (DYNAMIC POINTS REWARDS CATALOG WITH PATH LOGGING)
+# FILE: pages/store.py (DYNAMIC POINTS REWARDS CATALOG)
 # ====================================================================
 
 import streamlit as st
@@ -8,6 +8,7 @@ import requests
 import json
 import os
 import re
+import base64
 
 if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
     st.switch_page("login.py")
@@ -74,22 +75,32 @@ live_data, live_inventory, summary_value, summary_collected, dynamic_catalog = f
     user_passcode, st.session_state["store_refresh_token"]
 )
 
-def determine_asset_filename(reward_key, index_fallback):
+def get_local_image_base64(reward_key, index_fallback):
     """
-    Extracts numerical content cleanly or utilizes explicit grid step sizing fallbacks.
+    Reads image directly from your project's local assets/ directory,
+    converts it to base64 data, eliminating GitHub 404 URL case-sensitivity issues completely.
     """
     raw_str = str(reward_key).strip().lower()
     digits = re.findall(r'\d+', raw_str)
+    num_id = digits[0] if digits else str(index_fallback + 1)
     
-    if digits:
-        num_id = digits[0]
-    else:
-        num_id = str(index_fallback + 1)
-        
-    github_user = "joyb02-repo"
-    github_repo = "MedallionManager"
+    # Check lowercase extension first, then fallback to uppercase if needed
+    local_paths = [
+        os.path.join("assets", f"Reward{num_id}.jpg"),
+        os.path.join("assets", f"Reward{num_id}.JPG")
+    ]
     
-    return f"https://raw.githubusercontent.com/{github_user}/{github_repo}/main/assets/Reward{num_id}.jpg"
+    for path in local_paths:
+        if os.path.exists(path):
+            try:
+                with open(path, "rb") as image_file:
+                    encoded_string = base64.b64encode(image_file.read()).decode()
+                return f"data:image/jpeg;base64,{encoded_string}"
+            except Exception:
+                pass
+
+    # Safe placeholder background if file is physically missing from the directory
+    return "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' fill='%231E2235'/></svg>"
 
 STORE_ITEMS = []
 for idx, item in enumerate(dynamic_catalog):
@@ -98,7 +109,7 @@ for idx, item in enumerate(dynamic_catalog):
         "title": item.get("title", "Unknown Reward"),
         "cost": item.get("cost", 0),
         "desc": item.get("description", ""),
-        "img_filename": determine_asset_filename(item.get("reward_key", ""), idx)
+        "img_base64": get_local_image_base64(item.get("reward_key", ""), idx)
     })
 
 items_json = json.dumps(STORE_ITEMS)
@@ -125,12 +136,9 @@ html_store_template = """
     .store-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; box-sizing: border-box; padding: 0 10px; margin-bottom: 35px; }
     .store-card { background: #161925; border: 1px solid #23273A; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; justify-content: space-between; }
     
-    .item-image-frame { width: 100%; height: 140px; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; background: #0E1117; border-radius: 6px; overflow: hidden; border: 1px solid #1E2235; }
+    .item-image-frame { width: 100%; height: 140px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; background: #0E1117; border-radius: 6px; overflow: hidden; border: 1px solid #1E2235; }
     .item-image-frame img { height: 100%; width: 100%; object-fit: cover; }
     
-    /* 🛠️ LIVE TROUBLESHOOTING LABEL DISPLAY STYLE */
-    .path-debug-text { font-size: 10px; color: #E53E3E; background: rgba(0,0,0,0.4); width: 100%; word-break: break-all; padding: 4px; border-radius: 4px; margin-bottom: 12px; font-family: monospace; text-align: left; }
-
     .item-title { font-size: 15px; font-weight: 700; color: #FFFFFF; margin-bottom: 6px; }
     .item-desc { font-size: 12px; color: rgba(255, 255, 255, 0.4); line-height: 1.4; margin-bottom: 15px; min-height: 34px; }
     .item-cost-badge { font-size: 13px; font-weight: 700; color: #10B981; margin-bottom: 15px; }
@@ -345,9 +353,8 @@ CARD_TEMPLATE = """
 <div class="store-card">
     <div style="width: 100%;">
         <div class="item-image-frame">
-            <img src="__IMG__" />
+            <img src="__IMG_BASE64__" />
         </div>
-        <div class="path-debug-text">Path: __IMG__</div>
         <div class="item-title">__TITLE__</div>
         <div class="item-desc">__DESC__</div>
     </div>
@@ -367,7 +374,7 @@ for item in STORE_ITEMS:
     raw_desc = item['desc']
     desc_html = raw_desc.replace("**", "<strong>", 1).replace("**", "</strong>", 1) if "**" in raw_desc else raw_desc
     
-    card_piece = CARD_TEMPLATE.replace("__IMG__", item['img_filename'])
+    card_piece = CARD_TEMPLATE.replace("__IMG_BASE64__", item['img_base64'])
     card_piece = card_piece.replace("__TITLE__", item['title'])
     card_piece = card_piece.replace("__DESC__", desc_html)
     card_piece = card_piece.replace("__COST__", str(item['cost']))
@@ -384,4 +391,4 @@ html_store_elements = html_store_elements.replace("__MEDALLIONS_JSON__", medalli
 html_store_elements = html_store_elements.replace("__PASSCODE_RAW__", user_passcode)
 html_store_elements = html_store_elements.replace("__API_URL_PLACEHOLDER__", API_URL)
 
-st.components.v1.html(html_store_elements, height=1250, scrolling=True)
+st.components.v1.html(html_store_elements, height=1100, scrolling=True)
