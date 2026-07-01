@@ -76,17 +76,17 @@ live_data, live_inventory, summary_value, summary_collected, dynamic_catalog = f
 
 def determine_asset_filename(reward_key, index_fallback):
     """
-    Directly targets your files using GitHub's raw raw content delivery URLs
-    Bypasses local server routing restrictions inside the custom iframe environment.
+    Directly addresses files over GitHub's raw Content Delivery Network.
+    Bypasses iframe security constraints cleanly.
     """
     digits = re.findall(r'\d+', str(reward_key))
     num_id = digits[0] if digits else str(index_fallback + 1)
     
-    # Matches repository name and exact asset capitalization shown in GitHub screenshots
-    github_username = "joyb02"
-    repository_name = "MedallionManager"
+    # Leverages your exact repository profile info seen in the workspace screenshot
+    github_user = "joyb02"
+    github_repo = "MedallionManager"
     
-    return f"https://raw.githubusercontent.com/{github_username}/{repository_name}/main/assets/Reward{num_id}.jpg"
+    return f"https://raw.githubusercontent.com/{github_user}/{github_repo}/main/assets/Reward{num_id}.jpg"
 
 STORE_ITEMS = []
 for idx, item in enumerate(dynamic_catalog):
