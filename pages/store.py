@@ -7,8 +7,8 @@ import streamlit as st
 import requests
 import json
 import os
-import base64
 import re
+from streamlit.web.server.server import Server
 
 if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
     st.switch_page("login.py")
@@ -75,33 +75,33 @@ live_data, live_inventory, summary_value, summary_collected, dynamic_catalog = f
     user_passcode, st.session_state["store_refresh_token"]
 )
 
-def determine_asset_filename(reward_key, index_fallback):
-    # Extracts number (e.g., "Reward 1" or "Reward1" -> "1")
+def get_streamlit_app_url():
+    """Dynamically determines the current app base URL to serve static assets accurately."""
+    try:
+        # Pull server information to extract hosted domain context
+        headers = st.context.headers
+        if "Host" in headers:
+            proto = headers.get("X-Forwarded-Proto", "https")
+            return f"{proto}://{headers['Host']}"
+    except:
+        pass
+    return ""
+
+def determine_asset_filename(reward_key, index_fallback, base_url):
+    # Extracts number (e.g., "Reward 1" -> "1")
     digits = re.findall(r'\d+', str(reward_key))
     num_id = digits[0] if digits else str(index_fallback + 1)
     target_filename = f"Reward{num_id}.jpg"
     
-    # Exhaustive cross-platform directory scan to find local file
-    possible_paths = [
-        os.path.join(os.getcwd(), "assets", target_filename),
-        os.path.join(os.getcwd(), "app", "static", "assets", target_filename),
-        os.path.join(os.path.dirname(__file__), "..", "assets", target_filename),
-        os.path.join(os.path.dirname(__file__), "assets", target_filename),
-        f"assets/{target_filename}"
-    ]
+    if base_url:
+        # Route through Streamlit's native static serving directory setup
+        return f"{base_url}/app/static/assets/{target_filename}"
     
-    for path in possible_paths:
-        normalized_path = os.path.abspath(path)
-        if os.path.exists(normalized_path):
-            try:
-                with open(normalized_path, "rb") as img_file:
-                    encoded_string = base64.b64encode(img_file.read()).decode()
-                    return f"data:image/jpeg;base64,{encoded_string}"
-            except Exception:
-                pass
-                
-    # Fallback placeholder to verify structural design rendering if disk layout fails
-    return "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=400"
+    # Absolute local routing fallback for fallback local offline run checks
+    return f"app/static/assets/{target_filename}"
+
+# Get the base app hosting address
+app_base_url = get_streamlit_app_url()
 
 STORE_ITEMS = []
 for idx, item in enumerate(dynamic_catalog):
@@ -110,7 +110,7 @@ for idx, item in enumerate(dynamic_catalog):
         "title": item["title"],
         "cost": item["cost"],
         "desc": item["description"],
-        "img_filename": determine_asset_filename(item["reward_key"], idx)
+        "img_filename": determine_asset_filename(item["reward_key"], idx, app_base_url)
     })
 
 items_json = json.dumps(STORE_ITEMS)
