@@ -76,18 +76,20 @@ live_data, live_inventory, summary_value, summary_collected, dynamic_catalog = f
 
 def determine_asset_filename(reward_key, index_fallback):
     """
-    Constructs accurate GitHub direct raw paths from the numeric Reward Keys.
-    Forces precise case-matching for filenames and extensions.
+    Constructs accurate GitHub direct raw paths from the Reward Keys.
+    Handles numeric ids (e.g., 1) and string ids (e.g., 'Reward 1') seamlessly.
     """
-    # Pull any integers out of your key column (e.g., '1' -> '1')
-    digits = re.findall(r'\d+', str(reward_key))
-    num_id = digits[0] if digits else str(index_fallback + 1)
+    cleaned_key = str(reward_key).strip()
+    digits = re.findall(r'\d+', cleaned_key)
     
-    # Matching your exact user profile and repository settings
+    if digits:
+        num_id = digits[0]
+    else:
+        num_id = str(index_fallback + 1)
+        
     github_user = "joyb02-repo"
     github_repo = "MedallionManager"
     
-    # Points cleanly to raw CDN with exact capitalization 'RewardX.jpg'
     return f"https://raw.githubusercontent.com/{github_user}/{github_repo}/main/assets/Reward{num_id}.jpg"
 
 STORE_ITEMS = []
