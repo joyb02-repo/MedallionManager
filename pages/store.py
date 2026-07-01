@@ -83,19 +83,22 @@ def get_local_image_base64(reward_key, index_fallback):
     raw_str = str(reward_key).strip().lower()
     digits = re.findall(r'\d+', raw_str)
     num_id = digits[0] if digits else str(index_fallback + 1)
-    
-    # Check lowercase extension first, then fallback to uppercase if needed
+
+    # Check common extensions/casings so renames between jpg/png don't silently break images
     local_paths = [
-        os.path.join("assets", f"Reward{num_id}.jpg"),
-        os.path.join("assets", f"Reward{num_id}.JPG")
+        (os.path.join("assets", f"Reward{num_id}.png"), "png"),
+        (os.path.join("assets", f"Reward{num_id}.PNG"), "png"),
+        (os.path.join("assets", f"Reward{num_id}.jpg"), "jpeg"),
+        (os.path.join("assets", f"Reward{num_id}.JPG"), "jpeg"),
+        (os.path.join("assets", f"Reward{num_id}.jpeg"), "jpeg"),
     ]
-    
-    for path in local_paths:
+
+    for path, mime in local_paths:
         if os.path.exists(path):
             try:
                 with open(path, "rb") as image_file:
                     encoded_string = base64.b64encode(image_file.read()).decode()
-                return f"data:image/jpeg;base64,{encoded_string}"
+                return f"data:image/{mime};base64,{encoded_string}"
             except Exception:
                 pass
 
