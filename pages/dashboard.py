@@ -298,6 +298,7 @@ html_base_template = """
         mineBtn.disabled = true;
 
         document.getElementById("miningModal").style.display = "flex";
+        const img = document.getElementById('cyclerImg');
         const wrapper = document.getElementById('outcomeWrapper');
         const itemTxt = document.getElementById('itemNameTxt');
         const claimBtn = document.getElementById('claimBtn');
@@ -306,9 +307,39 @@ html_base_template = """
         claimBtn.disabled = true;
         claimBtn.innerText = "Claim Medallion";
 
+        // Start cycling through placeholder art immediately. Previously this
+        // waited on the server response before showing any animation at all,
+        // which left the modal on a blank/broken image icon for however long
+        // the Apps Script round-trip took (often a second or two) - looking
+        // frozen. This loop has no outcome attached yet; it just keeps the
+        // reel spinning until the real result comes back, at which point
+        // runRevealAnimation() takes over and lands on the true answer.
+        let placeholderRunning = true;
+        let placeholderCounter = 0;
+        function placeholderCycle() {
+            if (!placeholderRunning) return;
+            const currentItem = pool[placeholderCounter % pool.length];
+            if (assetLibrary[currentItem]) img.src = assetLibrary[currentItem];
+            placeholderCounter++;
+            setTimeout(placeholderCycle, 90);
+        }
+        placeholderCycle();
+
+        // Guards against a genuinely hung request (dropped connection, unusually
+        // slow cold start, etc.) so the modal can never sit frozen indefinitely -
+        // after 20s this surfaces an error and lets the user retry.
+        const timeoutMs = 20000;
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("timeout")), timeoutMs)
+        );
+
         try {
-            const response = await fetch(endpoint + "?action=mineMedallion&passcode=" + encodeURIComponent("__PASSCODE_RAW__"));
+            const response = await Promise.race([
+                fetch(endpoint + "?action=mineMedallion&passcode=" + encodeURIComponent("__PASSCODE_RAW__")),
+                timeoutPromise
+            ]);
             const result = await response.json();
+            placeholderRunning = false;
 
             if (result.status !== "success" || !result.item) {
                 itemTxt.innerText = "Mining failed - try again";
@@ -317,18 +348,21 @@ html_base_template = """
                 claimBtn.disabled = false;
                 claimBtn.classList.add('visible');
                 mineInFlight = false;
+                mineBtn.disabled = false;
                 return;
             }
 
             selectedItem = result.item;
             runRevealAnimation(selectedItem);
         } catch (e) {
+            placeholderRunning = false;
             itemTxt.innerText = "Network error - try again";
             wrapper.style.opacity = "1";
             claimBtn.innerText = "Close";
             claimBtn.disabled = false;
             claimBtn.classList.add('visible');
             mineInFlight = false;
+            mineBtn.disabled = false;
         }
     }
 
