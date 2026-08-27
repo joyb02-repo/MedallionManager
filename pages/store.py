@@ -136,11 +136,13 @@ html_store_template = """
     .stat-label { font-size: 11px; text-transform: uppercase; color: #718096; margin-bottom: 4px; letter-spacing: 0.5px; }
     .stat-value { font-size: 20px; font-weight: 700; color: #F4D068; }
 
-    .store-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; box-sizing: border-box; padding: 0 10px; margin-bottom: 35px; }
+    .store-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; width: 100%; box-sizing: border-box; padding: 0 10px; margin-bottom: 35px; }
     .store-card { background: #161925; border: 1px solid #23273A; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; justify-content: space-between; }
     
-    .item-image-frame { width: 100%; height: 140px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; background: #0E1117; border-radius: 6px; overflow: hidden; border: 1px solid #1E2235; }
-    .item-image-frame img { height: 100%; width: 100%; object-fit: cover; }
+    /* Square frame that shows the whole image (letterboxed if needed) instead of
+       cropping the top/bottom off wider photos like the old fixed-height + cover crop did */
+    .item-image-frame { width: 100%; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; background: #0E1117; border-radius: 6px; overflow: hidden; border: 1px solid #1E2235; }
+    .item-image-frame img { max-width: 100%; max-height: 100%; width: 100%; height: 100%; object-fit: contain; }
     
     .item-title { font-size: 15px; font-weight: 700; color: #FFFFFF; margin-bottom: 6px; }
     .item-desc { font-size: 12px; color: rgba(255, 255, 255, 0.4); line-height: 1.4; margin-bottom: 15px; min-height: 34px; }
@@ -186,8 +188,9 @@ html_store_template = """
     .finalize-btn { width: 100%; height: 44px; background: #F4D068; color: #0E1117; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; text-transform: uppercase; cursor: pointer; }
     .finalize-btn:disabled { background: #161925 !important; color: #3D4563 !important; border: 1px solid #23273A; cursor: not-allowed; }
     .close-modal-link { color: #718096; font-size: 12px; margin-top: 14px; display: inline-block; cursor: pointer; text-decoration: underline; }
-    @media (max-width: 992px) { .store-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 600px) { .store-grid { grid-template-columns: repeat(1, 1fr); } }
+    @media (max-width: 1200px) { .store-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 860px) { .store-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 520px) { .store-grid { grid-template-columns: repeat(1, 1fr); } }
 </style>
 
 <div class="store-header-wrapper">
